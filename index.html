@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diario de Luciano</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#2457D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&family=Archivo+Black&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+/* Una sola columna tipo app móvil: estado arriba, botones grandes de un toque, navegación inferior. */
+:root{
+  --bg:#F2F5F9; --surface:#FFFFFF; --ink:#16202E; --muted:#667487; --line:#E1E7EF;
+  --accent:#2457D6; --accent-ink:#FFFFFF;
+  --sleep:#5A55D2; --feed:#D9820F; --diaper:#2A9468; --health:#D2493F; --grow:#0E87A3;
+  --font-display:'Bricolage Grotesque','Figtree',system-ui,sans-serif;
+  --font-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1420; --surface:#18202F; --ink:#EAF0F8; --muted:#92A0B5; --line:#2A3447;
+    --accent:#6C93FF; --accent-ink:#0B1020;
+    --sleep:#9A96FF; --feed:#F3A93D; --diaper:#4FCB93; --health:#FF7C70; --grow:#4BC4DE;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1420; --surface:#18202F; --ink:#EAF0F8; --muted:#92A0B5; --line:#2A3447;
+  --accent:#6C93FF; --accent-ink:#0B1020;
+  --sleep:#9A96FF; --feed:#F3A93D; --diaper:#4FCB93; --health:#FF7C70; --grow:#4BC4DE;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.35;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+svg{display:block}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#app{max-width:480px;margin:0 auto;padding:16px 16px 104px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.top h1{font-size:28px;line-height:1.1}
+.top .age{color:var(--muted);font-weight:500;margin-top:2px}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.banner{border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px;background:color-mix(in srgb,var(--feed) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--feed) 40%,var(--line))}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 10px 11px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.tile .v{font-family:var(--font-display);font-size:19px;font-weight:700;margin-top:3px;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.sec{margin:20px 0 8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+.act{--c:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:12px 8px;border-radius:18px;border:1.5px solid color-mix(in srgb,var(--c) 30%,var(--line));background:color-mix(in srgb,var(--c) 11%,var(--surface));color:var(--ink);font-weight:700;text-align:center;line-height:1.15}
+.act .ic{color:var(--c);width:26px;height:26px}
+.act small{font-weight:500;color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
+.act:active{transform:scale(.97)}
+.act.on{background:var(--c);border-color:var(--c);color:#fff}
+.act.on .ic,.act.on small{color:#fff}
+.act.on{animation:pulse 2s ease-in-out infinite}
+
+@keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 22%,transparent)}}
+.act.big{min-height:104px;flex-direction:row;gap:14px;font-size:20px;font-family:var(--font-display)}
+.act.big .ic{width:34px;height:34px}
+.act.big small{font-size:14px;display:block;font-family:var(--font-body)}
+.c-sleep{--c:var(--sleep)}.c-feed{--c:var(--feed)}.c-diaper{--c:var(--diaper)}.c-health{--c:var(--health)}.c-grow{--c:var(--grow)}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rowmain{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left;background:none;border:0;padding:10px 4px 10px 12px;color:inherit}
+.rowdel{flex:none;width:48px;align-self:stretch;min-height:56px;border:0;background:none;color:var(--muted);display:grid;place-items:center;font-size:13px;font-weight:700;transition:width .15s,background .15s}
+.rowdel.armed{width:88px;background:var(--health);color:#fff}
+.rowdel .ic{width:20px;height:20px}
+.row .dot{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 15%,var(--surface));color:var(--c);flex:none}
+.row .dot .ic{width:21px;height:21px}
+.row .tx{flex:1;min-width:0}
+.row .t{font-weight:600}
+.row .s{font-size:13px;color:var(--muted)}
+.row .r{font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;flex:none}
+.dayh{font-family:var(--font-display);font-size:16px;margin:18px 0 8px;text-transform:capitalize}
+.empty{color:var(--muted);text-align:center;padding:26px 8px;border:1.5px dashed var(--line);border-radius:16px}
+.nav{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);z-index:5}
+.nav div{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px 10px}
+.nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:12px;font-weight:600;color:var(--muted);border-radius:12px;min-height:52px}
+.nav button[aria-current="page"]{color:var(--accent)}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.daynav strong{font-family:var(--font-display);font-size:19px;text-transform:capitalize;text-align:center;flex:1}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+.stat .k{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.stat .k .ic{width:16px;height:16px;color:var(--c)}
+.stat .v{font-family:var(--font-display);font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat .s{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:10px}
+.card h3{font-size:16px;margin-bottom:10px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:118px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;min-width:0}
+.bar i{display:block;width:100%;border-radius:6px 6px 3px 3px;background:var(--c);min-height:3px}
+.bar span{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar b{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.bar.sel i{outline:2px solid var(--ink);outline-offset:1px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button,.chips button,.pill{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:600;min-height:44px}
+.seg button.on,.pill.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chips button{padding:8px 12px;min-height:40px}
+.pills{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.pill{padding:8px 14px;min-height:40px}
+.chart text{fill:var(--muted);font-size:10.5px;font-family:var(--font-body)}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid var(--grow);vertical-align:middle;margin-right:6px}
+.legend i.d{border-top:2px dashed var(--muted)}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.primary{width:100%;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-weight:700;min-height:54px;font-size:17px}
+.ghost{width:100%;border:1.5px solid var(--line);border-radius:16px;background:none;min-height:50px;font-weight:600}
+.danger{width:100%;border:1.5px solid color-mix(in srgb,var(--health) 50%,var(--line));border-radius:16px;background:none;color:var(--health);min-height:50px;font-weight:700}
+.back{position:fixed;inset:0;background:rgba(8,12,20,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:480px;max-height:92%;overflow:auto;background:var(--bg);border-radius:24px 24px 0 0;padding:18px 16px 22px;display:flex;flex-direction:column;gap:12px}
+.sheet h2{font-size:22px}
+.fld label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.fld input[type=text],.fld input[type=number],.fld input[type=date],.fld input[type=datetime-local]{width:100%;min-height:50px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:10px 12px;font:inherit;font-size:17px}
+.acts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:30;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast button{border:0;background:none;color:inherit;font-weight:700;text-decoration:underline;padding:6px 4px;min-height:36px}
+.growthlist .row .dot{--c:var(--grow)}
+.mt{margin-top:12px}
+.noclaude .aicard{display:none}
+.hbtns{display:flex;gap:8px}
+html,body{overscroll-behavior-y:contain}
+#ptr{position:fixed;left:50%;top:0;z-index:15;width:42px;height:42px;margin-left:-21px;border-radius:50%;background:var(--bg);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.18);display:grid;place-items:center;transform:translateY(-60px);opacity:0;pointer-events:none}
+#ptr svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#ptr.anim{transition:transform .25s ease,opacity .25s ease}
+#ptr.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){#ptr.spin svg{animation:none}}
+.inslist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ins{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--lc);border-radius:14px;padding:10px 12px}
+.ins .chip{flex:none;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--lc);background:color-mix(in srgb,var(--lc) 14%,transparent);border-radius:8px;padding:3px 7px;margin-top:1px}
+.ins .it{font-weight:700;line-height:1.3}
+.ins .id{font-size:13.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.card .inslist .ins{background:transparent}
+.legend i.band{border-top:0;height:10px;width:18px;background:color-mix(in srgb,var(--grow) 22%,transparent);border-radius:2px}
+.aicard{border:1.5px solid color-mix(in srgb,var(--accent) 40%,var(--line))}
+.aitext{font-size:15px;line-height:1.5}
+.aitext h4{font-family:var(--font-display);font-size:16px;margin:14px 0 4px}
+.aitext p{margin:6px 0}.aitext ul{margin:4px 0;padding-left:20px}.aitext li{margin:3px 0}
+.primary:disabled{opacity:.6}
+.undobtn{position:relative}
+.undobtn.off{opacity:.4}
+.undobtn .badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-size:11.5px;font-weight:700;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.skins{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 8px}
+.skinbtn{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:4px 2px;border:0;background:none;min-height:44px;position:relative}
+.skinbtn .sw{width:72px;height:72px;border-radius:50%;border:4px solid;box-shadow:0 3px 10px rgba(0,0,0,.18);transition:transform .2s}
+.skinbtn b{font-size:13.5px;line-height:1.2}
+.skinbtn small{color:var(--muted);font-size:11.5px;line-height:1.2}
+.skinbtn.on .sw{transform:scale(1.06);box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--accent)}
+.skinbtn.on::after{content:"✓";position:absolute;top:0;left:calc(50% + 20px);width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:14px;display:grid;place-items:center}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;margin-top:6px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--surface);min-height:56px}
+.switchrow b{display:block}.switchrow small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.switch{flex:none;width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;transition:background .2s}
+.switch i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .2s}
+.switch.on{background:var(--accent)}.switch.on i{transform:translateX(20px)}
+html[data-skin] body{background:transparent}
+#app{position:relative;z-index:1}
+
+/* ===== Skin: Noche estrellada ===== */
+:root[data-skin="noche"]{--bg:#0A0D26;--surface:rgba(255,255,255,.07);--ink:#EEF0FF;--muted:#A4A9D6;--line:rgba(255,255,255,.15);--accent:#FFD66B;--accent-ink:#1A1530;--sleep:#A99BFF;--feed:#FFB65C;--diaper:#5FE0B0;--health:#FF7F8E;--grow:#6FD3FF;--font-display:'Fredoka',sans-serif;color-scheme:dark}
+[data-skin="noche"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 70% at 80% -10%,#3A3290 0%,transparent 60%),radial-gradient(90% 60% at 0% 110%,#123A6B 0%,transparent 60%),#0A0D26}
+[data-skin="noche"] body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1.6px 1.6px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 90px 120px,#fff,transparent),radial-gradient(1.8px 1.8px at 160px 60px,#FFF3C4,transparent),radial-gradient(1px 1px at 230px 170px,#fff,transparent),radial-gradient(1.2px 1.2px at 60px 200px,#CFD6FF,transparent),radial-gradient(1px 1px at 200px 220px,#fff,transparent);background-size:260px 240px;animation:twinkle 3.5s ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.9}to{opacity:.35}}
+[data-skin="noche"] :is(.tile,.row,.stat,.card,.act,.iconbtn){backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+[data-skin="noche"] .act.on{box-shadow:0 0 26px color-mix(in srgb,var(--c) 65%,transparent);animation:none}
+[data-skin="noche"] .nav{background:rgba(10,13,38,.86)}
+[data-skin="noche"] h1{filter:drop-shadow(0 0 10px rgba(255,214,107,.45))}
+
+/* ===== Skin: Algodón de azúcar ===== */
+:root[data-skin="algodon"]{--bg:#FFF6FA;--surface:rgba(255,255,255,.8);--ink:#3B2D4A;--muted:#85759A;--line:#F1DDEB;--accent:#E0559A;--accent-ink:#fff;--sleep:#8C6DF0;--feed:#EC7C3A;--diaper:#22A88F;--health:#E5487A;--grow:#3A9FE0;--font-display:'Fredoka',sans-serif;--font-body:'Nunito',sans-serif;color-scheme:light}
+[data-skin="algodon"] body::after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(35% 30% at 20% 20%,#FFC7DE,transparent 70%),radial-gradient(35% 30% at 85% 30%,#D8C9FF,transparent 70%),radial-gradient(40% 35% at 50% 85%,#BFF0DF,transparent 70%),#FFF6FA;animation:drift 16s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(5%,-4%) rotate(8deg) scale(1.06)}}
+[data-skin="algodon"] :is(.tile,.row,.stat,.card){border-radius:24px;border-color:transparent;box-shadow:0 6px 18px rgba(200,120,170,.14)}
+[data-skin="algodon"] .act{border-radius:28px;border-color:transparent;box-shadow:0 6px 16px color-mix(in srgb,var(--c) 22%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 20%,#fff),color-mix(in srgb,var(--c) 7%,#fff))}
+[data-skin="algodon"] .act.on{background:linear-gradient(160deg,var(--c),color-mix(in srgb,var(--c) 65%,#fff))}
+[data-skin="algodon"] .primary{border-radius:999px;background:linear-gradient(90deg,#E0559A,#8C6DF0)}
+[data-skin="algodon"] .iconbtn{border-radius:50%;border-color:transparent;box-shadow:0 4px 12px rgba(200,120,170,.18)}
+[data-skin="algodon"] .nav{background:rgba(255,246,250,.9)}
+
+/* ===== Skin: Océano (mar claro de día) ===== */
+:root[data-skin="oceano"]{--bg:#DDF4F5;--surface:rgba(255,255,255,.62);--ink:#073B4C;--muted:#3E6C77;--line:rgba(7,59,76,.14);--accent:#0A8FA6;--accent-ink:#fff;--sleep:#4C63D2;--feed:#D9701A;--diaper:#11977A;--health:#DB4B3B;--grow:#0B7FB0;--font-display:'Fredoka',sans-serif;color-scheme:light}
+[data-skin="oceano"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(40% 25% at 85% 4%,rgba(255,244,200,.9),transparent 70%),linear-gradient(180deg,#9EE3EC 0%,#CFF3F2 50%,#EAF8F2 78%,#F6EBD2 100%)}
+[data-skin="oceano"] body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:200px;z-index:0;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200'%3E%3Cpath d='M0 70 Q75 30 150 70 T300 70 T450 70 T600 70 V200 H0Z' fill='%230A8FA6' fill-opacity='.16'/%3E%3Cpath d='M0 115 Q75 85 150 115 T300 115 T450 115 T600 115 V200 H0Z' fill='%2311977A' fill-opacity='.14'/%3E%3C/svg%3E") repeat-x 0 0/600px 200px;animation:waves 12s linear infinite}
+@keyframes waves{to{background-position:600px 0}}
+[data-skin="oceano"] :is(.tile,.row,.stat,.card,.act,.iconbtn){backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+[data-skin="oceano"] :is(.tile,.row,.stat,.card){border-radius:20px;border-color:rgba(255,255,255,.7);box-shadow:0 4px 16px rgba(7,59,76,.08)}
+[data-skin="oceano"] .act{border-radius:22px}
+[data-skin="oceano"] .act.on{box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 25%,transparent),0 8px 24px color-mix(in srgb,var(--c) 35%,transparent);animation:none}
+[data-skin="oceano"] .primary{background:linear-gradient(90deg,#0A8FA6,#11977A)}
+[data-skin="oceano"] .nav{background:rgba(234,248,242,.9)}
+
+/* ===== Skin: Selva ===== */
+:root[data-skin="selva"]{--bg:#F3EBD8;--surface:#FFFBF1;--ink:#20321F;--muted:#677459;--line:#E2D6B8;--accent:#2F6B3A;--accent-ink:#FFFBF1;--sleep:#4F5BA8;--feed:#B8670F;--diaper:#3E8E4E;--health:#C2453A;--grow:#1F7F86;--font-display:'DM Serif Display',Georgia,serif;color-scheme:light}
+[data-skin="selva"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%232F6B3A' fill-opacity='.13'%3E%3Cpath d='M50 95C20 70 15 35 50 5c35 30 30 65 0 90z'/%3E%3Cpath d='M10 70C5 45 25 25 45 30 40 50 30 65 10 70z'/%3E%3Cpath d='M90 70c5-25-15-45-35-40 5 20 15 35 35 40z'/%3E%3C/g%3E%3C/svg%3E") left -70px bottom 70px/260px no-repeat,#F3EBD8}
+[data-skin="selva"] body::before{content:"";position:fixed;top:-40px;right:-50px;width:230px;height:230px;z-index:0;pointer-events:none;transform-origin:80% 10%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%233E8E4E' fill-opacity='.16'%3E%3Cpath d='M50 95C20 70 15 35 50 5c35 30 30 65 0 90z'/%3E%3Cpath d='M10 70C5 45 25 25 45 30 40 50 30 65 10 70z'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;animation:sway 6s ease-in-out infinite alternate}
+@keyframes sway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+[data-skin="selva"] :is(.tile,.stat,.card){border-radius:22px 8px 22px 8px}
+[data-skin="selva"] .act{border-radius:26px 8px 26px 8px}
+[data-skin="selva"] .row{border-radius:18px 6px 18px 6px}
+[data-skin="selva"] .sec{font-family:var(--font-display);text-transform:none;letter-spacing:0;font-size:18px;color:var(--ink)}
+[data-skin="selva"] :is(h1,h2,h3,.v,.dayh,.daynav strong,.act.big){font-weight:400}
+[data-skin="selva"] .nav{background:rgba(243,235,216,.92)}
+
+/* ===== Skin: Retro pop ===== */
+:root[data-skin="retro"]{--bg:#FFF4D6;--surface:#FFFFFF;--ink:#111111;--muted:#444444;--line:#111111;--accent:#FF4F7B;--accent-ink:#111;--sleep:#8C74FF;--feed:#FF9F1C;--diaper:#14C38E;--health:#FF4F4F;--grow:#2EC4F1;--font-display:'Archivo Black',sans-serif;color-scheme:light}
+[data-skin="retro"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(rgba(17,17,17,.13) 1.2px,transparent 1.6px) 0 0/16px 16px,#FFF4D6}
+[data-skin="retro"] :is(.tile,.row,.stat,.card,.iconbtn,.seg button,.pill,.chips button,.ghost,.danger,.fld input){border:2.5px solid #111;box-shadow:4px 4px 0 #111;border-radius:10px}
+[data-skin="retro"] .act{border:2.5px solid #111;border-radius:12px;box-shadow:4px 4px 0 #111;background:color-mix(in srgb,var(--c) 32%,#fff)}
+[data-skin="retro"] .act.on{background:var(--c);color:#111;animation:none}
+[data-skin="retro"] .act .ic,[data-skin="retro"] .act.on .ic,[data-skin="retro"] .act.on small{color:#111}
+[data-skin="retro"] :is(.act,.primary,.iconbtn):active{transform:translate(4px,4px);box-shadow:0 0 0 #111}
+[data-skin="retro"] .primary{border:2.5px solid #111;box-shadow:4px 4px 0 #111;border-radius:12px}
+[data-skin="retro"] .row .dot{background:var(--c);color:#111;border:2px solid #111}
+[data-skin="retro"] .rowdel{border-left:2.5px solid #111}
+[data-skin="retro"] .bar i{border:2px solid #111}
+[data-skin="retro"] .nav{background:#FFF4D6;border-top:2.5px solid #111}
+[data-skin="retro"] .sheet{border:2.5px solid #111;border-bottom:0}
+[data-skin="retro"] h1{text-transform:uppercase}
+[data-skin="retro"] :is(h1,h2,h3,.v,.dayh,.daynav strong,.act.big){font-weight:400}
+
+
+/* ===== Animaciones suaves (se apagan con html.noanim) ===== */
+#fx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#fx i{position:absolute;display:block}
+/* brillo que recorre botones principales y el botón activo */
+.primary,.act.on{position:relative;overflow:hidden}
+.primary::after,.act.on::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);animation:sheen 5.5s ease-in-out infinite;pointer-events:none}
+@keyframes sheen{0%,62%{left:-60%}100%{left:130%}}
+/* los íconos de los botones respiran apenas */
+.act .ic{animation:breathe 4.5s ease-in-out infinite}
+.act:nth-child(2n) .ic{animation-delay:-1.5s}.act:nth-child(3n) .ic{animation-delay:-3s}
+@keyframes breathe{50%{transform:translateY(-1.5px) scale(1.05)}}
+/* el nombre del bebé cambia de color muy despacio */
+.top h1{background:linear-gradient(90deg,var(--ink),var(--accent),var(--sleep),var(--ink));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:hue 14s ease-in-out infinite}
+@keyframes hue{50%{background-position:100% 0}}
+/* aparición suave al cambiar de pestaña o abrir hojas */
+.status,.sec,.grid,.list,.card,.inslist{animation:rise .45s ease both}
+@keyframes rise{from{opacity:.001;transform:translateY(6px)}}
+.sheet{animation:up .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+
+/* Clásico: auroras de color difuminadas */
+html:not([data-skin]) body{background:transparent}
+html:not([data-skin]) #fx i{width:60vmax;height:60vmax;border-radius:50%;filter:blur(60px);opacity:.16}
+html:not([data-skin]) #fx i:nth-child(1){background:var(--accent);top:-30vmax;left:-20vmax;animation:float1 22s ease-in-out infinite alternate}
+html:not([data-skin]) #fx i:nth-child(2){background:var(--sleep);top:20vh;right:-35vmax;animation:float2 26s ease-in-out infinite alternate}
+html:not([data-skin]) #fx i:nth-child(3){background:var(--feed);bottom:-40vmax;left:0;opacity:.10;animation:float1 30s ease-in-out infinite alternate-reverse}
+@keyframes float1{to{transform:translate(12vmax,8vmax) scale(1.1)}}
+@keyframes float2{to{transform:translate(-10vmax,-6vmax) scale(.92)}}
+
+/* Noche: estrellas fugaces y luna que brilla */
+[data-skin="noche"] #fx i:nth-child(-n+3){top:0;left:0;width:120px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff);opacity:0;animation:shoot 9s ease-in infinite}
+[data-skin="noche"] #fx i:nth-child(1){top:12%;left:55%;animation-delay:2s}
+[data-skin="noche"] #fx i:nth-child(2){top:28%;left:85%;animation-delay:6.5s;animation-duration:12s}
+[data-skin="noche"] #fx i:nth-child(3){top:6%;left:25%;animation-delay:10s;animation-duration:15s}
+@keyframes shoot{0%{opacity:0;transform:rotate(155deg) translateX(0)}2%{opacity:1}9%{opacity:0;transform:rotate(155deg) translateX(320px)}100%{opacity:0;transform:rotate(155deg) translateX(320px)}}
+[data-skin="noche"] #fx i:nth-child(4){top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,214,107,.28),transparent 65%);animation:glow 6s ease-in-out infinite alternate}
+@keyframes glow{to{opacity:.45;transform:scale(1.12)}}
+
+/* Algodón: burbujas que suben */
+[data-skin="algodon"] #fx i{bottom:-80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.9),rgba(255,255,255,.15) 40%,transparent 70%),var(--bc);opacity:.45;animation:bubble linear infinite}
+[data-skin="algodon"] #fx i:nth-child(1){--bc:#FFC7DE;left:8%;width:46px;height:46px;animation-duration:19s}
+[data-skin="algodon"] #fx i:nth-child(2){--bc:#D8C9FF;left:32%;width:28px;height:28px;animation-duration:15s;animation-delay:-6s}
+[data-skin="algodon"] #fx i:nth-child(3){--bc:#BFF0DF;left:58%;width:56px;height:56px;animation-duration:24s;animation-delay:-12s}
+[data-skin="algodon"] #fx i:nth-child(4){--bc:#FFE3B8;left:80%;width:34px;height:34px;animation-duration:17s;animation-delay:-3s}
+[data-skin="algodon"] #fx i:nth-child(5){--bc:#FFC7DE;left:92%;width:22px;height:22px;animation-duration:21s;animation-delay:-15s}
+@keyframes bubble{0%{transform:translate(0,0)}50%{transform:translate(18px,-55vh)}100%{transform:translate(-10px,-115vh)}}
+
+/* Océano: destellos de sol y burbujitas */
+[data-skin="oceano"] #fx i:nth-child(1){top:-10%;left:-10%;width:120%;height:70%;background:repeating-linear-gradient(105deg,transparent 0 60px,rgba(255,255,255,.18) 60px 90px,transparent 90px 170px);filter:blur(6px);animation:rays 10s ease-in-out infinite alternate}
+@keyframes rays{from{opacity:.4;transform:translateX(-20px)}to{opacity:.9;transform:translateX(20px)}}
+[data-skin="oceano"] #fx i:nth-child(n+2){bottom:-30px;width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(10,143,166,.45);background:rgba(255,255,255,.4);animation:bubble linear infinite}
+[data-skin="oceano"] #fx i:nth-child(2){left:15%;animation-duration:13s}
+[data-skin="oceano"] #fx i:nth-child(3){left:45%;width:7px;height:7px;animation-duration:10s;animation-delay:-4s}
+[data-skin="oceano"] #fx i:nth-child(4){left:70%;width:13px;height:13px;animation-duration:16s;animation-delay:-9s}
+[data-skin="oceano"] #fx i:nth-child(5){left:88%;width:8px;height:8px;animation-duration:12s;animation-delay:-2s}
+
+/* Selva: hojas que caen despacio y luz que se filtra */
+[data-skin="selva"] #fx i:nth-child(-n+4){top:-40px;width:22px;height:22px;border-radius:0 100% 0 100%;background:linear-gradient(135deg,#8BB174,#3E8E4E);opacity:.5;animation:leaf linear infinite}
+[data-skin="selva"] #fx i:nth-child(1){left:12%;animation-duration:20s}
+[data-skin="selva"] #fx i:nth-child(2){left:48%;width:16px;height:16px;animation-duration:26s;animation-delay:-9s;background:linear-gradient(135deg,#D9B26A,#B8670F)}
+[data-skin="selva"] #fx i:nth-child(3){left:76%;animation-duration:23s;animation-delay:-15s}
+[data-skin="selva"] #fx i:nth-child(4){left:30%;width:14px;height:14px;animation-duration:30s;animation-delay:-4s}
+@keyframes leaf{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(30px,28vh) rotate(90deg)}50%{transform:translate(-20px,55vh) rotate(170deg)}75%{transform:translate(25px,82vh) rotate(260deg)}100%{transform:translate(0,112vh) rotate(360deg)}}
+[data-skin="selva"] #fx i:nth-child(5){top:-20%;right:-20%;width:80vw;height:80vw;border-radius:50%;background:radial-gradient(circle,rgba(255,236,170,.35),transparent 60%);animation:glow 8s ease-in-out infinite alternate}
+
+/* Retro: figuras que flotan y cambian de color */
+[data-skin="retro"] #fx i{width:26px;height:26px;border:2.5px solid #111;opacity:.55;animation:retro 14s ease-in-out infinite alternate,cycle 9s steps(1) infinite}
+[data-skin="retro"] #fx i:nth-child(1){top:14%;right:6%;border-radius:50%}
+[data-skin="retro"] #fx i:nth-child(2){top:46%;left:3%;transform:rotate(45deg);animation-delay:-4s,-3s}
+[data-skin="retro"] #fx i:nth-child(3){bottom:16%;right:10%;width:34px;height:14px;border-radius:7px;animation-delay:-8s,-6s}
+[data-skin="retro"] #fx i:nth-child(4){top:70%;left:42%;width:18px;height:18px;border-radius:50%;animation-delay:-2s,-1s}
+[data-skin="retro"] #fx i:nth-child(5){top:30%;left:60%;width:16px;height:16px;animation-delay:-11s,-5s}
+@keyframes retro{to{transform:translate(14px,-22px) rotate(160deg)}}
+@keyframes cycle{0%{background:#FFE14D}25%{background:#FF4F7B}50%{background:#2EC4F1}75%{background:#14C38E}}
+[data-skin="retro"] .top h1{background:none;-webkit-text-fill-color:currentColor;animation:none;text-shadow:3px 3px 0 var(--accent)}
+
+
+
+/* ===== Animación de inicio (3 s) ===== */
+#splash{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;overflow:hidden}
+#splash.out{pointer-events:none}
+/* Salida: cada elemento se va con movimiento */
+#splash.out .sp-logo{animation:sp-out-logo .45s cubic-bezier(.5,-0.4,.7,.2) both}
+#splash.out.out .sp-name span{animation:sp-out-letter .4s cubic-bezier(.5,-0.6,.8,.3) both}
+#splash.out .sp-sub{animation:sp-out-down .35s cubic-bezier(.5,-0.5,.8,.3) .05s both}
+#splash.out .sp-bar{animation:sp-out-down .35s cubic-bezier(.5,-0.5,.8,.3) .1s both}
+@keyframes sp-out-logo{30%{transform:scale(1.15)}100%{transform:scale(0) rotate(-35deg)}}
+@keyframes sp-out-letter{to{transform:translateY(-60px) scale(0) rotate(-25deg)}}
+@keyframes sp-out-down{to{transform:translateY(90px) scale(.5)}}
+#splash.sk-noche.out .sp-logo{animation:sp-out-up .5s cubic-bezier(.6,-0.3,.8,.4) both}
+@keyframes sp-out-up{to{transform:translateY(-75vh) scale(.5) rotate(25deg)}}
+#splash.sk-oceano.out .sp-name span{animation-name:sp-out-sink}
+#splash.sk-oceano.out .sp-logo{animation:sp-out-sinklogo .5s cubic-bezier(.6,-0.4,.8,.4) both}
+@keyframes sp-out-sink{to{transform:translateY(70px) scale(.3) rotate(15deg)}}
+@keyframes sp-out-sinklogo{to{transform:translateY(60vh) scale(.4)}}
+#splash.sk-selva.out .sp-logo{transform-origin:50% 100%;animation:sp-out-sprout .45s cubic-bezier(.5,-0.5,.8,.3) both}
+@keyframes sp-out-sprout{30%{transform:scale(1.1,.9)}100%{transform:scale(1.3,0)}}
+#splash.sk-retro.out .sp-name span{animation-name:sp-out-drop}
+#splash.sk-retro.out .sp-logo{animation:sp-out-spin .5s cubic-bezier(.5,-0.5,.8,.3) both}
+@keyframes sp-out-drop{to{transform:translateY(140px) rotate(35deg) scale(.6)}}
+@keyframes sp-out-spin{to{transform:rotate(540deg) scale(0)}}
+#splash.sk-algodon.out .sp-logo{animation:sp-out-puff .45s cubic-bezier(.5,-0.4,.7,.2) both}
+@keyframes sp-out-puff{40%{transform:scale(1.35)}100%{transform:scale(0)}}
+/* Revelado: el fondo se abre y deja ver la app */
+#splash.reveal{animation:sp-iris .5s cubic-bezier(.7,0,.3,1) both}
+@keyframes sp-iris{from{clip-path:circle(150% at 50% 42%)}to{clip-path:circle(0% at 50% 42%)}}
+#splash.sk-noche.reveal{animation:sp-lift .55s cubic-bezier(.7,0,.3,1) both}
+@keyframes sp-lift{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 100% 0)}}
+#splash.sk-algodon.reveal{animation:sp-bubble .55s cubic-bezier(.6,-0.35,.7,1) both}
+@keyframes sp-bubble{from{clip-path:circle(150% at 50% 36%)}to{clip-path:circle(0% at 50% 36%)}}
+#splash.sk-oceano.reveal{animation:sp-drain .55s cubic-bezier(.7,0,.3,1) both}
+@keyframes sp-drain{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(100% 0 0 0)}}
+#splash.sk-selva.reveal{animation:sp-doors .55s cubic-bezier(.7,0,.3,1) both}
+@keyframes sp-doors{from{clip-path:polygon(0 0,50% 0,50% 100%,50% 100%,50% 0,100% 0,100% 100%,0 100%)}to{clip-path:polygon(0 0,0 0,0 100%,100% 100%,100% 0,100% 0,100% 100%,0 100%)}}
+#splash.sk-retro.reveal{animation:sp-slide .55s cubic-bezier(.6,-0.45,.7,1) both}
+@keyframes sp-slide{to{transform:translate(120%,-12%) rotate(12deg)}}
+.sp-glow{position:absolute;width:140vmax;height:140vmax;background:conic-gradient(from 0deg,var(--accent),var(--sleep),var(--feed),var(--diaper),var(--accent));opacity:.16;filter:blur(70px);animation:sp-spin 6s linear infinite}
+.sp-logo{position:relative;width:132px;height:132px;margin-bottom:10px;animation:sp-pop .7s cubic-bezier(.2,1.4,.4,1) both}
+.sp-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--sleep),var(--feed),var(--diaper),var(--accent),var(--sleep));-webkit-mask:radial-gradient(circle,transparent 55%,#000 57%);mask:radial-gradient(circle,transparent 55%,#000 57%);animation:sp-spin 2.4s linear infinite}
+.sp-core{position:absolute;inset:18px;border-radius:50%;background:var(--surface);box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 35%,transparent);display:grid;place-items:center}
+.sp-core svg{width:52px;height:52px;fill:var(--health);stroke:none;animation:sp-beat 1s ease-in-out .7s 3}
+.sp-dot{position:absolute;top:50%;left:50%;width:12px;height:12px;margin:-6px;border-radius:50%;animation:sp-orbit 2.6s cubic-bezier(.5,0,.5,1) infinite}
+.sp-dot.d1{background:var(--sleep)}.sp-dot.d2{background:var(--feed);animation-delay:-.65s}.sp-dot.d3{background:var(--diaper);animation-delay:-1.3s}.sp-dot.d4{background:var(--accent);animation-delay:-1.95s}
+.sp-spark{position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--accent);opacity:0;animation:sp-burst .9s ease-out 1.2s both}
+.sp-spark.k1{--a:0deg}.sp-spark.k2{--a:60deg;background:var(--feed)}.sp-spark.k3{--a:120deg;background:var(--sleep)}.sp-spark.k4{--a:180deg;background:var(--diaper)}.sp-spark.k5{--a:240deg;background:var(--health)}.sp-spark.k6{--a:300deg}
+.sp-name{position:relative;font-family:var(--font-display);font-size:40px;line-height:1.1;color:var(--ink);margin:0;display:flex}
+.sp-name span{display:inline-block;animation:sp-letter .5s cubic-bezier(.2,1.3,.4,1) both}
+.sp-sub{position:relative;margin:0;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;animation:sp-fade .6s ease 1.1s both}
+.sp-bar{position:absolute;bottom:calc(48px + env(safe-area-inset-bottom,0px));width:140px;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.sp-bar i{display:block;height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,var(--sleep),var(--feed),var(--diaper));transform-origin:left;animation:sp-fill 2.1s linear both}
+@keyframes sp-spin{to{transform:rotate(360deg)}}
+@keyframes sp-pop{from{transform:scale(.3);opacity:0}}
+@keyframes sp-beat{0%,100%{transform:scale(1)}30%{transform:scale(1.18)}60%{transform:scale(.96)}}
+@keyframes sp-orbit{from{transform:rotate(0) translateX(80px) rotate(0)}to{transform:rotate(360deg) translateX(80px) rotate(-360deg)}}
+@keyframes sp-burst{0%{opacity:1;transform:rotate(var(--a)) translateX(30px) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateX(110px) scale(.3)}}
+@keyframes sp-letter{from{opacity:0;transform:translateY(18px) scale(.7)}}
+@keyframes sp-fade{from{opacity:0;transform:translateY(6px)}}
+@keyframes sp-fill{from{transform:scaleX(0)}}
+[data-skin="retro"] .sp-core{border:3px solid #111;box-shadow:5px 5px 0 #111}
+[data-skin="retro"] .sp-name{text-transform:uppercase;text-shadow:3px 3px 0 var(--accent)}
+
+/* ===== Escenas de inicio por skin ===== */
+.sp-logo .scv{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);overflow:visible}
+.scv *{transform-box:view-box}
+.sp-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+/* Noche */
+#splash.sk-noche .sp-bg{background:radial-gradient(70% 50% at 50% 42%,#2B2A78 0%,transparent 70%),radial-gradient(1.6px 1.6px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 90px 120px,#fff,transparent),radial-gradient(1.8px 1.8px at 160px 60px,#FFF3C4,transparent),radial-gradient(1px 1px at 230px 170px,#fff,transparent),radial-gradient(1.2px 1.2px at 60px 200px,#CFD6FF,transparent);background-size:auto,260px 240px,260px 240px,260px 240px,260px 240px,260px 240px;animation:sp-fade 1s ease both}
+#splash.sk-noche .sp-bg::after{content:"";position:absolute;top:18%;left:70%;width:170px;height:2.5px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff);animation:shoot 2.2s ease-in .9s both}
+.n-halo{fill:#FFD66B;opacity:.16;animation:n-halo 1.6s ease-in-out .5s infinite alternate}
+.n-moon{transform-origin:92px 80px;fill:#FFD66B;filter:drop-shadow(0 0 14px rgba(255,214,107,.7));animation:n-rise 1s cubic-bezier(.2,1,.3,1) both}
+.n-st{fill:#fff;animation:sp-starpop .5s cubic-bezier(.2,1.6,.4,1) var(--d) both,n-tw 1.2s ease-in-out calc(var(--d) + .5s) infinite alternate}
+.n-z{fill:#A4A9D6;font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;opacity:0;animation:n-z 1.8s ease-out var(--d) infinite}
+@keyframes n-halo{to{opacity:.32;transform:scale(1.08)}}
+@keyframes n-rise{from{opacity:0;transform:translateY(46px) rotate(-25deg)}}
+@keyframes sp-starpop{from{transform:scale(0) rotate(-90deg)}}
+@keyframes n-tw{to{opacity:.35}}
+@keyframes n-z{0%{opacity:0;transform:translate(0,6px)}25%{opacity:1}100%{opacity:0;transform:translate(10px,-18px)}}
+@keyframes n-letter{from{opacity:0;filter:blur(8px);transform:translateY(-8px)}}
+#splash.sk-noche .sp-name{text-shadow:0 0 18px rgba(255,214,107,.5)}
+/* Algodón */
+#splash.sk-algodon .sp-bg::before,#splash.sk-algodon .sp-bg::after{content:"";position:absolute;width:90vmax;height:90vmax;border-radius:50%;filter:blur(50px);opacity:.55}
+#splash.sk-algodon .sp-bg::before{background:#FFC7DE;top:-45vmax;left:-35vmax;animation:float1 3s ease-in-out both}
+#splash.sk-algodon .sp-bg::after{background:#BFF0DF;bottom:-50vmax;right:-40vmax;animation:float2 3s ease-in-out both}
+.a-cl{animation:a-puff .7s cubic-bezier(.2,1.5,.4,1) var(--d) both}
+.a-heart{animation:a-heart .7s cubic-bezier(.2,1.7,.4,1) 1s both,a-float 1.4s ease-in-out 1.7s infinite alternate}
+.a-bub{fill:#fff;opacity:0;animation:a-bub 1.8s ease-out var(--d) infinite}
+@keyframes a-puff{from{transform:scale(0)}}
+@keyframes a-heart{from{transform:scale(0) rotate(-20deg)}}
+@keyframes a-float{to{transform:translateY(-5px)}}
+@keyframes a-bub{0%{opacity:0;transform:translateY(0) scale(.4)}30%{opacity:.9}100%{opacity:0;transform:translateY(-50px) scale(1)}}
+@keyframes a-letter{0%{opacity:0;transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+/* Océano */
+#splash.sk-oceano .sp-bg{background:linear-gradient(180deg,#9EE3EC 0%,#CFF3F2 55%,#F6EBD2 100%)}
+#splash.sk-oceano .sp-bg::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200' preserveAspectRatio='none'%3E%3Cpath d='M0 40 Q75 10 150 40 T300 40 T450 40 T600 40 V200 H0Z' fill='%230A8FA6' fill-opacity='.25'/%3E%3Cpath d='M0 80 Q75 55 150 80 T300 80 T450 80 T600 80 V200 H0Z' fill='%2311977A' fill-opacity='.22'/%3E%3C/svg%3E") repeat-x 0 0/600px 100%;animation:o-sea 3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes o-sea{from{transform:translateY(100%);background-position:0 0}to{background-position:300px 0}}
+.o-sun{fill:#FFD27A;animation:o-sun 1.2s cubic-bezier(.2,1,.3,1) .2s both}
+.o-ray{stroke:#FFD27A;stroke-width:3;stroke-linecap:round;animation:o-ray 2s linear infinite}
+.o-wr{animation:o-rise 1s cubic-bezier(.2,1,.3,1) var(--d) both}
+.o-ws{animation:o-slide 1.6s linear infinite}
+.o-b{fill:rgba(255,255,255,.7);stroke:#0A8FA6;stroke-width:1.2;opacity:0;animation:a-bub 1.6s ease-out var(--d) infinite}
+@keyframes o-sun{from{transform:translateY(50px)}}
+@keyframes o-ray{to{transform:rotate(360deg)}}
+@keyframes o-rise{from{transform:translateY(60px)}}
+@keyframes o-slide{to{transform:translateX(40px)}}
+@keyframes o-letter{from{opacity:0;transform:translateY(22px)}}
+@keyframes o-bob{50%{transform:translateY(-4px)}}
+/* Selva */
+#splash.sk-selva .sp-bg::before,#splash.sk-selva .sp-bg::after{content:"";position:absolute;width:240px;height:240px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%232F6B3A' fill-opacity='.18'%3E%3Cpath d='M50 95C20 70 15 35 50 5c35 30 30 65 0 90z'/%3E%3Cpath d='M10 70C5 45 25 25 45 30 40 50 30 65 10 70z'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;animation:sway 1.5s ease-in-out infinite alternate}
+#splash.sk-selva .sp-bg::before{top:-50px;right:-60px;transform-origin:80% 10%}
+#splash.sk-selva .sp-bg::after{bottom:-40px;left:-70px;transform:scaleX(-1);transform-origin:20% 90%}
+.s-pot{animation:a-puff .5s cubic-bezier(.2,1.4,.4,1) both}
+.s-stem{stroke-dasharray:100;stroke-dashoffset:100;animation:s-draw 1s ease-out .4s forwards}
+.s-leaf{animation:a-puff .6s cubic-bezier(.2,1.5,.4,1) var(--d) both}
+.s-bud{animation:a-heart .6s cubic-bezier(.2,1.7,.4,1) 1.5s both}
+@keyframes s-draw{to{stroke-dashoffset:0}}
+@keyframes s-letter{from{opacity:0;transform:scaleY(0)}}
+#splash.sk-selva .sp-name span{transform-origin:50% 100%}
+#splash.sk-selva .sp-name{font-weight:400}
+/* Retro */
+#splash.sk-retro .sp-bg{background:radial-gradient(rgba(17,17,17,.14) 1.3px,transparent 1.7px) 0 0/16px 16px}
+#splash.sk-retro .sp-bg::after{content:"";position:absolute;left:-20%;right:-20%;bottom:12%;height:70px;background:repeating-linear-gradient(-45deg,#FF4F7B 0 18px,#FFE14D 18px 36px,#2EC4F1 36px 54px);border-top:3px solid #111;border-bottom:3px solid #111;transform:rotate(-6deg);animation:r-stripes 3s linear both}
+@keyframes r-stripes{from{transform:rotate(-6deg) translateX(-120%)}25%{transform:rotate(-6deg) translateX(0)}to{transform:rotate(-6deg) translateX(-8%)}}
+.r-burst{animation:r-burst .6s cubic-bezier(.2,1.5,.4,1) both,o-ray 8s linear .6s infinite}
+.r-sh{animation:r-slam .55s cubic-bezier(.3,1.6,.5,1) var(--d) both}
+.r-heart{animation:r-heart .6s cubic-bezier(.2,1.8,.4,1) 1.1s both}
+@keyframes r-burst{from{transform:scale(0) rotate(-120deg)}}
+@keyframes r-slam{from{transform:translate(var(--fx),var(--fy)) rotate(-160deg)}}
+@keyframes r-heart{from{transform:scale(0) rotate(30deg)}}
+@keyframes r-letter{0%{opacity:0;transform:translateY(-70px) rotate(-15deg)}70%{transform:translateY(6px) rotate(3deg)}100%{transform:none}}
+#splash.sk-retro .sp-name{font-weight:400}
+/* Letras por skin */
+#splash.sk-noche .sp-name span{animation:n-letter .6s ease both}
+#splash.sk-algodon .sp-name span{animation:a-letter .55s ease both}
+#splash.sk-oceano .sp-name span{animation:o-letter .5s ease both,o-bob 1.4s ease-in-out 1.2s infinite}
+#splash.sk-selva .sp-name span{animation:s-letter .5s cubic-bezier(.2,1.5,.4,1) both}
+#splash.sk-retro .sp-name span{animation:r-letter .55s ease-out both}
+
+html.noanim #splash *,html.noanim #splash *::before,html.noanim #splash *::after{animation:none!important}
+html.noanim .s-stem{stroke-dashoffset:0}
+
+/* ===== Más visibles ===== */
+.act,.tile{position:relative;overflow:hidden}
+.act::after,.tile::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:50%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:sheen 4.2s ease-in-out infinite;pointer-events:none}
+.grid .act:nth-child(2)::after{animation-delay:.35s}.grid .act:nth-child(3)::after{animation-delay:.7s}.grid .act:nth-child(4)::after{animation-delay:1.05s}
+.tile:nth-child(2)::after{animation-delay:.4s}.tile:nth-child(3)::after{animation-delay:.8s}
+.primary::after{animation-duration:3.5s;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent)}
+@keyframes breathe{50%{transform:translateY(-3px) scale(1.1)}}
+.act.on{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--c) 28%,transparent)}}
+.top h1{animation-duration:7s}
+
+html:not([data-skin]) #fx i:nth-child(-n+3){opacity:.34;filter:blur(48px)}
+html:not([data-skin]) #fx i:nth-child(1){animation-duration:12s}
+html:not([data-skin]) #fx i:nth-child(2){animation-duration:15s}
+html:not([data-skin]) #fx i:nth-child(3){opacity:.24;animation-duration:17s}
+html:not([data-skin]) #fx i:nth-child(n+4){width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px 3px color-mix(in srgb,var(--accent) 60%,transparent);animation:spark 3.2s ease-in-out infinite}
+html:not([data-skin]) #fx i:nth-child(4){top:22%;left:78%}
+html:not([data-skin]) #fx i:nth-child(5){top:62%;left:10%;background:var(--feed);animation-delay:-1.6s}
+@keyframes spark{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:.9;transform:scale(1)}}
+
+[data-skin="noche"] #fx i:nth-child(-n+3){width:160px;height:2.5px;animation-duration:6s}
+[data-skin="noche"] #fx i:nth-child(2){animation-duration:7.5s;animation-delay:2.5s}
+[data-skin="noche"] #fx i:nth-child(3){animation-duration:9s;animation-delay:4.5s}
+[data-skin="noche"] #fx i:nth-child(4){background:radial-gradient(circle,rgba(255,214,107,.45),transparent 65%)}
+[data-skin="noche"] body::before{animation-duration:2.2s}
+
+[data-skin="algodon"] #fx i{opacity:.75}
+[data-skin="algodon"] #fx i:nth-child(1){animation-duration:11s}
+[data-skin="algodon"] #fx i:nth-child(2){animation-duration:9s}
+[data-skin="algodon"] #fx i:nth-child(3){animation-duration:14s}
+[data-skin="algodon"] #fx i:nth-child(4){animation-duration:10s}
+[data-skin="algodon"] #fx i:nth-child(5){animation-duration:12s}
+[data-skin="algodon"] body::after{animation-duration:9s}
+
+[data-skin="oceano"] #fx i:nth-child(1){background:repeating-linear-gradient(105deg,transparent 0 60px,rgba(255,255,255,.32) 60px 95px,transparent 95px 170px);animation-duration:6s}
+[data-skin="oceano"] #fx i:nth-child(n+2){border-width:2px;border-color:rgba(10,143,166,.7);background:rgba(255,255,255,.6)}
+[data-skin="oceano"] #fx i:nth-child(2){width:14px;height:14px;animation-duration:8s}
+[data-skin="oceano"] #fx i:nth-child(3){width:10px;height:10px;animation-duration:7s}
+[data-skin="oceano"] #fx i:nth-child(4){width:18px;height:18px;animation-duration:10s}
+[data-skin="oceano"] #fx i:nth-child(5){width:11px;height:11px;animation-duration:9s}
+[data-skin="oceano"] body::before{animation-duration:7s}
+
+[data-skin="selva"] #fx i:nth-child(-n+4){opacity:.85;width:28px;height:28px}
+[data-skin="selva"] #fx i:nth-child(1){animation-duration:13s}
+[data-skin="selva"] #fx i:nth-child(2){width:22px;height:22px;animation-duration:16s}
+[data-skin="selva"] #fx i:nth-child(3){animation-duration:15s}
+[data-skin="selva"] #fx i:nth-child(4){width:20px;height:20px;animation-duration:18s}
+[data-skin="selva"] body::before{animation-duration:3.5s}
+
+[data-skin="retro"] #fx i{opacity:.95;width:34px;height:34px;animation-duration:7s,4.5s}
+[data-skin="retro"] #fx i:nth-child(3){width:44px;height:18px}
+[data-skin="retro"] .tile::after,[data-skin="retro"] .act::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent)}
+
+/* Apagado: por el interruptor */
+html.noanim #fx{display:none}
+html.noanim *:not(#ptr):not(#ptr svg),html.noanim *::before,html.noanim *::after{animation:none!important;transition:none!important}
+html.noanim .top h1{-webkit-text-fill-color:currentColor;background:none}
+
+
+.live{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-top:4px}.live i{width:8px;height:8px;border-radius:50%;background:var(--diaper)}
+</style>
+</head>
+<body>
+<div id="splash" role="presentation">
+  <div class="sp-glow"></div>
+  <div class="sp-logo"><div class="sp-ring"></div><div class="sp-core"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+    <i class="sp-dot d1"></i><i class="sp-dot d2"></i><i class="sp-dot d3"></i><i class="sp-dot d4"></i>
+    <i class="sp-spark k1"></i><i class="sp-spark k2"></i><i class="sp-spark k3"></i><i class="sp-spark k4"></i><i class="sp-spark k5"></i><i class="sp-spark k6"></i></div>
+  <h1 class="sp-name" id="sp-name">Luciano</h1>
+  <p class="sp-sub">Diario del bebé</p>
+  <div class="sp-bar"><i></i></div>
+</div>
+<div id="fx" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+<div id="app"></div>
+<div id="sheetroot"></div>
+<div id="toastroot"></div>
+<div id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg></div>
+<script>
+(function(){
+'use strict';
+const MONTH = 30.4375*864e5;
+const DAY = 864e5;
+const WHO = {
+  nino:{ kg:[3.3,4.5,5.6,6.4,7.0,7.5,7.9,8.3,8.6,8.9,9.2,9.4,9.6],
+         cm:[49.9,54.7,58.4,61.4,63.9,65.9,67.6,69.2,70.6,72.0,73.3,74.5,75.7],
+         head:[34.5,37.3,39.1,40.5,41.6,42.6,43.3,44.0,44.5,45.0,45.4,45.8,46.1] },
+  nina:{ kg:[3.2,4.2,5.1,5.8,6.4,6.9,7.3,7.6,7.9,8.2,8.5,8.7,8.9],
+         cm:[49.1,53.7,57.1,59.8,62.1,64.0,65.7,67.3,68.7,70.1,71.5,72.8,74.0],
+         head:[33.9,36.5,38.3,39.5,40.6,41.5,42.2,42.8,43.4,43.8,44.2,44.6,44.9] }
+};
+const METRICS = { kg:{label:'Peso',unit:'kg',dec:2}, cm:{label:'Talla',unit:'cm',dec:1}, head:{label:'Cabeza',unit:'cm',dec:1} };
+
+const ICONS = {
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  bottle:'<path d="M9 2h6M10 2v3M14 2v3M8 7h8a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1zM7 12h4M7 16h4"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  spoon:'<ellipse cx="12" cy="7" rx="3.5" ry="5"/><path d="M12 12v10"/>',
+  drop:'<path d="M12 2.7s6 6.1 6 10.3a6 6 0 0 1-12 0c0-4.2 6-10.3 6-10.3z"/>',
+  pill:'<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="M9.6 14.4l4.8-4.8"/>',
+  therm:'<path d="M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0z"/>',
+  syringe:'<path d="M18 2l4 4M17 7l3-3M19 9l-8.7 8.7a2 2 0 0 1-2.8 0L6.3 16.5a2 2 0 0 1 0-2.8L15 5M7 17l-4 4M10 14l-1-1M13 11l-1-1"/>',
+  ruler:'<path d="M21.3 8.7l-6-6a1 1 0 0 0-1.4 0L2.7 13.9a1 1 0 0 0 0 1.4l6 6a1 1 0 0 0 1.4 0L21.3 10a1 1 0 0 0 0-1.4zM7.5 10.5l2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/>',
+  home:'<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  bars:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+  grow:'<path d="M3 20h18M6 20V13M12 20V8M18 20V3"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  left:'<path d="M15 18l-6-6 6-6"/>', right:'<path d="M9 18l6-6-6-6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14M10 11v6M14 11v6"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1.3"/><circle cx="17.5" cy="10.5" r="1.3"/><circle cx="8.5" cy="7.5" r="1.3"/><circle cx="6.5" cy="12.5" r="1.3"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/>'
+};
+const SKINS = [
+  {id:'clasico',name:'Clásico',d:'Limpio, claro u oscuro',c:['#F2F5F9','#2457D6','#5A55D2','#D9820F'],ring:'#16202E'},
+  {id:'noche',name:'Noche estrellada',d:'Oscuro con estrellas',c:['#0A0D26','#FFD66B','#A99BFF','#3A3290'],ring:'#0A0D26'},
+  {id:'algodon',name:'Algodón de azúcar',d:'Pastel y burbujas',c:['#FFC7DE','#E0559A','#D8C9FF','#BFF0DF'],ring:'#FFF6FA'},
+  {id:'oceano',name:'Océano',d:'Mar claro con olas',c:['#9EE3EC','#0A8FA6','#F6EBD2','#14A37F'],ring:'#DDF4F5'},
+  {id:'selva',name:'Selva',d:'Arena y hojas verdes',c:['#F3EBD8','#2F6B3A','#B8670F','#8BB174'],ring:'#20321F'},
+  {id:'retro',name:'Retro pop',d:'Bordes y colores fuertes',c:['#FFE14D','#FF4F7B','#2EC4F1','#14C38E'],ring:'#111111'}
+];
+const SKEY='diario-bebe-skin', AKEY='diario-bebe-anim';
+function applyAnim(on){ S.anim=!!on; document.documentElement.classList.toggle('noanim',!S.anim); }
+function setAnim(on){
+  applyAnim(on); try{ localStorage.setItem(AKEY,on?'1':'0'); }catch(e){}
+  if(S.db&&S.me){ S.db.doc('data/users/'+S.me+'/prefs').set({skin:S.skin,anim:S.anim}).catch(()=>{}); }
+}
+function applySkin(id){
+  if(!SKINS.some(k=>k.id===id)) id='clasico';
+  S.skin=id;
+  if(id==='clasico') document.documentElement.removeAttribute('data-skin'); else document.documentElement.setAttribute('data-skin',id);
+}
+function setSkin(id){
+  applySkin(id);
+  try{ localStorage.setItem(SKEY,id); }catch(e){}
+  if(S.db&&S.me){ S.db.doc('data/users/'+S.me+'/prefs').set({skin:id,anim:S.anim}).catch(()=>{}); }
+}
+const delBtn = (k,id) => '<button class="rowdel" data-'+k+'="'+esc(id)+'" aria-label="Borrar este registro">'+ic('trash')+'</button>';
+const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+ICONS[n]+'</svg>';
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = s => document.querySelector(s);
+
+const S = {
+  tab:'hoy', events:[], growth:[], profile:{}, db:null, user:null, me:null,
+  readonly:false, local:false, slow:false, synced:false,
+  day:startOfDay(Date.now()), gm:'kg', skin:'clasico', anim:true, undo:[], ai:{busy:false,text:'',err:''}, names:{}, asked:new Set(), sheet:null
+};
+
+/* ---------- utilidades de tiempo ---------- */
+function startOfDay(ts){ const d=new Date(ts); d.setHours(0,0,0,0); return d.getTime(); }
+function hm(ts){ return new Date(ts).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit'}); }
+function fmtDur(ms){
+  ms=Math.max(0,ms); const m=Math.floor(ms/60000);
+  if(m<1) return 'menos de 1 min';
+  if(m<60) return m+' min';
+  const h=Math.floor(m/60), mm=m%60;
+  if(h<24) return h+' h'+(mm?' '+mm+' min':'');
+  return Math.floor(h/24)+' d '+(h%24)+' h';
+}
+function fmtClock(ms){
+  const s=Math.max(0,Math.floor(ms/1000)), h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+  const p=n=>String(n).padStart(2,'0');
+  return h? h+':'+p(m)+':'+p(x) : p(m)+':'+p(x);
+}
+function dayLabel(ts){
+  const t=startOfDay(Date.now()), d=startOfDay(ts);
+  if(d===t) return 'Hoy'; if(d===t-DAY) return 'Ayer';
+  return new Date(ts).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'});
+}
+function toLocalInput(ts){
+  const d=new Date(ts), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function fromLocalInput(v){ const t=new Date(v).getTime(); return isNaN(t)?null:t; }
+function ageText(){
+  const b=S.profile.birth; if(!b) return 'Agrega la fecha de nacimiento';
+  const bd=new Date(b+'T00:00:00'), now=new Date();
+  if(bd>now) return 'Aún no nace';
+  let m=(now.getFullYear()-bd.getFullYear())*12+now.getMonth()-bd.getMonth();
+  let a=new Date(bd); a.setMonth(bd.getMonth()+m);
+  if(a>now){ m--; a=new Date(bd); a.setMonth(bd.getMonth()+m); }
+  const d=Math.floor((now-a)/DAY);
+  if(m<1){
+    const dd=Math.floor((now-bd)/DAY);
+    if(dd<14) return dd+(dd===1?' día':' días');
+    return Math.floor(dd/7)+' semanas y '+(dd%7)+(dd%7===1?' día':' días');
+  }
+  if(m>=24){ const y=Math.floor(m/12), r=m%12; return y+' años'+(r?' y '+r+(r===1?' mes':' meses'):''); }
+  return m+(m===1?' mes':' meses')+(d?' y '+d+(d===1?' día':' días'):'');
+}
+function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ---------- datos: base compartida, o este dispositivo si no hay conexión ---------- */
+const LKEY='diario-bebe-v1';
+function loadLocal(){
+  try{ const j0=JSON.parse(localStorage.getItem(LKEY)||'null'); if(!j0||!j0.profile||!j0.profile.name){ const j=j0||{events:[],growth:[]}; j.profile=Object.assign({name:'Luciano',sex:'nino'},j.profile||{}); localStorage.setItem(LKEY,JSON.stringify(j)); } }catch(e){}
+  try{ const j=JSON.parse(localStorage.getItem(LKEY)||'null'); if(j){ S.events=j.events||[]; S.growth=j.growth||[]; S.profile=j.profile||{}; } }catch(e){}
+}
+function saveLocal(){
+  try{ localStorage.setItem(LKEY,JSON.stringify({events:S.events,growth:S.growth,profile:S.profile})); }catch(e){}
+}
+function sortAll(){ S.events.sort((a,b)=>b.ts-a.ts); S.growth.sort((a,b)=>a.ts-b.ts); }
+async function write(coll,id,obj){
+  if(S.readonly){ toast('Solo tienes permiso de lectura. Pide que te compartan como colaborador.'); throw new Error('ro'); }
+  obj=JSON.parse(JSON.stringify(obj));
+  if(S.db){
+    try{ await S.db.collection(coll).doc(id).set(obj); }
+    catch(e){ toast('No se pudo guardar. Revisa la conexión e intenta de nuevo.'); throw e; }
+  } else {
+    const arr=coll==='events'?S.events:S.growth, i=arr.findIndex(x=>x.id===id);
+    const rec=Object.assign({id},obj); if(i>=0) arr[i]=rec; else arr.push(rec);
+    sortAll(); saveLocal(); render();
+  }
+}
+async function remove(coll,id){
+  if(S.readonly){ toast('Solo tienes permiso de lectura.'); throw new Error('ro'); }
+  if(S.db){
+    try{ await S.db.collection(coll).doc(id).delete(); }
+    catch(e){ toast('No se pudo borrar. Intenta de nuevo.'); throw e; }
+  } else {
+    if(coll==='events') S.events=S.events.filter(x=>x.id!==id); else S.growth=S.growth.filter(x=>x.id!==id);
+    saveLocal(); render();
+  }
+}
+async function saveProfile(p){
+  if(S.readonly){ toast('Solo tienes permiso de lectura.'); throw new Error('ro'); }
+  if(S.db){ try{ await S.db.doc('meta/profile').set(p); }catch(e){ toast('No se pudo guardar el perfil.'); throw e; } }
+  else { S.profile=p; saveLocal(); render(); }
+}
+const snapData = d => Object.assign({id:d.id}, d.data());
+
+async function init(){
+  try{ const sk=localStorage.getItem(SKEY); if(sk) applySkin(sk); }catch(e){}
+  let an=null; try{ an=localStorage.getItem(AKEY); }catch(e){}
+  applyAnim(an!=null?an==='1':true);
+  render();
+  let db=null,user=null;
+  try{ db=await claude.use('db'); }catch(e){}
+  try{ user=await claude.use('user'); }catch(e){}
+  S.user=user;
+  if(user){
+    try{ S.me=await user.id(); }catch(e){}
+    try{ if(user.can('data.write')===false) S.readonly=true; }catch(e){}
+  }
+  if(!db){ S.local=true; loadLocal(); sortAll(); render(); return; }
+  S.db=db;
+  if(S.me){ db.doc('data/users/'+S.me+'/prefs').get().then(s=>{ const k=s.exists&&s.data().skin; if(k&&k!==S.skin){ applySkin(k); try{ localStorage.setItem(SKEY,k); }catch(e){} }
+    const an=s.exists?s.data().anim:undefined; if(typeof an==='boolean'&&an!==S.anim){ applyAnim(an); try{ localStorage.setItem(AKEY,an?'1':'0'); }catch(e){} } }).catch(()=>{}); }
+  const timer=setTimeout(()=>{ if(!S.synced){ S.slow=true; render(); } },10000);
+  const done=snap=>{ if(!snap.metadata.fromCache){ S.synced=true; S.slow=false; clearTimeout(timer); } };
+  const onErr=e=>{ if(e&&e.code==='revoked'){ S.readonly=true; } S.slow=true; render(); };
+  db.collection('events').orderBy('ts','desc').limit(1000).onSnapshot(snap=>{
+    const was=S.synced;
+    S.events=snap.docs.map(snapData); done(snap); resolveNames();
+    if(was&&!snap.metadata.hasPendingWrites){
+      snap.docChanges().forEach(c=>{
+        if(c.type==='removed') return;
+        const d=snapData(c.doc); if(!d.who||d.who===S.me||c.doc.metadata.hasPendingWrites) return;
+        const f=evInfo(d); toast((S.names[d.who]||'Otro cuidador')+' registró: '+f.t+(f.s?' · '+f.s:''));
+      });
+    }
+    render();
+  },onErr);
+  db.collection('growth').orderBy('ts','asc').limit(500).onSnapshot(snap=>{
+    S.growth=snap.docs.map(snapData); done(snap); render();
+  },onErr);
+  db.doc('meta/profile').onSnapshot(s=>{
+    S.profile=s.exists?s.data():{}; try{ if(S.profile.name) localStorage.setItem('diario-bebe-nombre',S.profile.name); }catch(e){} done(s); render();
+  },onErr);
+}
+async function resolveNames(){
+  if(!S.user) return;
+  const ids=[...new Set(S.events.map(e=>e.who).filter(Boolean))].filter(i=>!S.asked.has(i));
+  if(!ids.length) return;
+  ids.forEach(i=>S.asked.add(i));
+  try{
+    const ps=await S.user.profiles(ids); let changed=false;
+    ids.forEach(i=>{ const n=ps&&ps[i]&&ps[i].name; if(n){ S.names[i]=n; changed=true; } });
+    if(changed) render();
+  }catch(e){}
+}
+const whoName = e => e.who ? (e.who===S.me ? 'tú' : (S.names[e.who]||'')) : '';
+
+/* ---------- eventos ---------- */
+const FEED = ['breast','bottle','solid'];
+function openSleep(){ return S.events.find(e=>e.type==='sleep'&&!e.end); }
+function openBreast(){ return S.events.find(e=>e.type==='breast'&&!e.end); }
+const SIDE = {izq:'izquierdo',der:'derecho'};
+const DIAP = {pipi:'Pipí',popo:'Popó',ambos:'Pipí y popó'};
+const AMT = {poco:'poco',medio:'medio',mucho:'mucho'};
+
+function evInfo(e){
+  switch(e.type){
+    case 'sleep': return {i:'moon',c:'sleep',t:e.end?'Durmió '+fmtDur(e.end-e.ts):'Durmiendo',s:e.end?hm(e.ts)+' a '+hm(e.end):'desde las '+hm(e.ts)};
+    case 'breast': return {i:'heart',c:'feed',t:'Pecho '+(SIDE[e.side]||''),s:e.end?fmtDur(e.end-e.ts):'en curso'};
+    case 'bottle': return {i:'bottle',c:'feed',t:(e.ml||0)+' ml',s:e.kind==='materna'?'Biberón con leche materna':'Biberón con fórmula'};
+    case 'solid': return {i:'spoon',c:'feed',t:e.food||'Sólidos',s:'Sólidos'+(e.amount?' · '+AMT[e.amount]:'')};
+    case 'diaper': return {i:'drop',c:'diaper',t:DIAP[e.kind]||'Pañal',s:'Pañal'};
+    case 'med': return {i:'pill',c:'health',t:e.name||'Medicina',s:'Medicina'+(e.dose?' · '+e.dose:'')};
+    case 'fever': return {i:'therm',c:'health',t:Number(e.temp).toFixed(1)+' °C',s:'Temperatura'+(e.temp>=38?' · fiebre':'')};
+    case 'vaccine': return {i:'syringe',c:'health',t:e.name||'Vacuna',s:'Vacuna'};
+  }
+  return {i:'list',c:'grow',t:e.type,s:''};
+}
+function rowHTML(e){
+  const f=evInfo(e), w=whoName(e);
+  const time=e.type==='sleep'&&!e.end ? '<span class="tick" data-ts="'+e.ts+'" data-m="dur"></span>' : esc(hm(e.ts));
+  return '<div class="row c-'+f.c+'"><button class="rowmain" data-edit="'+esc(e.id)+'"><span class="dot">'+ic(f.i)+'</span><span class="tx"><div class="t">'+esc(f.t)+'</div><div class="s">'+esc(f.s)+'</div></span><span class="r">'+time+(w?'<br>'+esc(w):'')+'</span></button>'+delBtn('delev',e.id)+'</div>';
+}
+async function addEvent(ev,msg){
+  ev.id=newId(); if(S.me) ev.who=S.me;
+  try{ await write('events',ev.id,ev); toast(msg,()=>remove('events',ev.id)); }catch(e){}
+}
+
+/* ---------- acciones de un toque ---------- */
+async function toggleSleep(){
+  const o=openSleep();
+  if(o){ const prev=Object.assign({},o); try{ await write('events',o.id,Object.assign({},o,{end:Date.now()})); toast('Despertó a las '+hm(Date.now()),()=>write('events',prev.id,prev)); }catch(e){} }
+  else addEvent({type:'sleep',ts:Date.now(),end:null},'Se durmió a las '+hm(Date.now()));
+}
+async function toggleBreast(side){
+  const o=openBreast(), now=Date.now();
+  if(o){
+    const prev=Object.assign({},o);
+    try{ await write('events',o.id,Object.assign({},o,{end:now})); }catch(e){ return; }
+    if(o.side===side){ toast('Pecho '+SIDE[side]+': '+fmtDur(now-o.ts),()=>write('events',prev.id,prev)); return; }
+    pushUndo('Fin de pecho '+SIDE[o.side],()=>write('events',prev.id,prev));
+  }
+  addEvent({type:'breast',side,ts:now,end:null},'Pecho '+SIDE[side]+' iniciado');
+}
+function quickDiaper(kind){ addEvent({type:'diaper',kind,ts:Date.now()},DIAP[kind]+' guardado'); }
+
+/* ---------- formularios (hoja inferior) ---------- */
+function fld(f){
+  const id='f_'+f.id;
+  if(f.t==='seg') return '<div class="fld"><label>'+f.l+'</label><div class="seg" role="group" aria-label="'+esc(f.l)+'" data-seg="'+f.id+'">'+f.o.map(([v,l])=>'<button type="button" data-v="'+v+'" class="'+(v===f.v?'on':'')+'">'+l+'</button>').join('')+'</div></div>';
+  if(f.t==='skins') return '<div class="skins">'+SKINS.map(k=>'<button type="button" class="skinbtn'+(k.id===S.skin?' on':'')+'" data-skinpick="'+k.id+'" aria-pressed="'+(k.id===S.skin)+'"><span class="sw" style="background:conic-gradient('+k.c[0]+' 0 25%,'+k.c[1]+' 0 50%,'+k.c[2]+' 0 75%,'+k.c[3]+' 0);border-color:'+k.ring+'"></span><b>'+esc(k.name)+'</b><small>'+esc(k.d)+'</small></button>').join('')+'</div><button type="button" class="switchrow" data-animtoggle="1" role="switch" aria-checked="'+S.anim+'"><span><b>Animaciones</b><small>Brillos, colores y movimientos suaves del fondo</small></span><span class="switch'+(S.anim?' on':'')+'"><i></i></span></button>';
+  if(f.t==='chips') return '<div class="chips">'+f.o.map(v=>'<button type="button" data-fill="f_'+f.id+'" data-v="'+v+'">'+v+'</button>').join('')+'</div>';
+  const extra=f.t==='number'?' inputmode="decimal" step="'+(f.step||'any')+'" min="0"':'';
+  return '<div class="fld"><label for="'+id+'">'+f.l+'</label><input id="'+id+'" type="'+f.t+'"'+extra+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+' value="'+esc(f.v==null?'':f.v)+'"></div>';
+}
+function openSheet(cfg){
+  S.sheet=cfg;
+  $('#sheetroot').innerHTML='<div class="back" id="back"><form class="sheet" id="sheetform" role="dialog" aria-modal="true" aria-label="'+esc(cfg.title)+'"><h2>'+esc(cfg.title)+'</h2>'+cfg.fields.map(fld).join('')+'<div class="acts"><button class="primary" type="submit">'+(cfg.saveLabel||'Guardar')+'</button>'+(cfg.noCancel?'':'<button class="ghost" type="button" data-close="1">Cancelar</button>')+(cfg.onDelete?'<button class="danger" type="button" data-del="1">Eliminar</button>':'')+'</div></form></div>';
+  const first=$('#sheetform input'); if(first&&!cfg.noFocus) setTimeout(()=>first.focus({preventScroll:true}),50);
+}
+function closeSheet(){ S.sheet=null; $('#sheetroot').innerHTML=''; }
+function val(id){
+  const seg=document.querySelector('[data-seg="'+id+'"] .on'); if(seg) return seg.dataset.v;
+  const el=document.getElementById('f_'+id); return el?el.value.trim():'';
+}
+function num(id){ const v=val(id).replace(',','.'); if(v==='') return null; const n=Number(v); return isFinite(n)?n:null; }
+
+function eventSheet(type,e){
+  const edit=!!e, now=Date.now(), ts=e?e.ts:now;
+  const T=n=>({t:'datetime-local',id:'ts',l:n||'Hora',v:toLocalInput(ts)});
+  let title,fields,build;
+  if(type==='bottle'){
+    title='Biberón';
+    fields=[{t:'seg',id:'kind',l:'Contenido',v:(e&&e.kind)||'formula',o:[['formula','Fórmula'],['materna','Leche materna']]},
+      {t:'chips',id:'ml',o:[30,60,90,120,150,180,210]},{t:'number',id:'ml',l:'Cantidad (ml)',v:e?e.ml:'',ph:'ml'},T()];
+    build=()=>{ const ml=num('ml'); if(!ml||ml<=0) return 'Escribe cuántos ml tomó.'; return {type,ts:fromLocalInput(val('ts')),kind:val('kind'),ml}; };
+  } else if(type==='solid'){
+    title='Sólidos';
+    fields=[{t:'text',id:'food',l:'¿Qué comió?',v:e?e.food:'',ph:'Ej. papilla de manzana'},
+      {t:'seg',id:'amount',l:'¿Cuánto comió?',v:(e&&e.amount)||'medio',o:[['poco','Poco'],['medio','Medio'],['mucho','Mucho']]},T()];
+    build=()=>{ const food=val('food'); if(!food) return 'Escribe qué comió.'; return {type,ts:fromLocalInput(val('ts')),food,amount:val('amount')}; };
+  } else if(type==='med'){
+    title='Medicina';
+    fields=[{t:'text',id:'name',l:'Medicina',v:e?e.name:'',ph:'Ej. paracetamol'},{t:'text',id:'dose',l:'Dosis',v:e?e.dose:'',ph:'Ej. 2,5 ml'},T()];
+    build=()=>{ const name=val('name'); if(!name) return 'Escribe el nombre de la medicina.'; return {type,ts:fromLocalInput(val('ts')),name,dose:val('dose')}; };
+  } else if(type==='fever'){
+    title='Temperatura';
+    fields=[{t:'number',id:'temp',l:'Temperatura (°C)',v:e?e.temp:'',ph:'36.8',step:'0.1'},T()];
+    build=()=>{ const temp=num('temp'); if(!temp||temp<30||temp>45) return 'Escribe una temperatura entre 30 y 45 °C.'; return {type,ts:fromLocalInput(val('ts')),temp}; };
+  } else if(type==='vaccine'){
+    title='Vacuna';
+    fields=[{t:'text',id:'name',l:'Vacuna',v:e?e.name:'',ph:'Ej. pentavalente, 2 meses'},T('Fecha y hora')];
+    build=()=>{ const name=val('name'); if(!name) return 'Escribe el nombre de la vacuna.'; return {type,ts:fromLocalInput(val('ts')),name}; };
+  } else if(type==='diaper'){
+    title='Pañal';
+    fields=[{t:'seg',id:'kind',l:'Tipo',v:e.kind,o:[['pipi','Pipí'],['popo','Popó'],['ambos','Ambos']]},T()];
+    build=()=>({type,ts:fromLocalInput(val('ts')),kind:val('kind')});
+  } else if(type==='sleep'){
+    title='Sueño';
+    fields=[{t:'datetime-local',id:'ts',l:'Se durmió',v:toLocalInput(e.ts)},{t:'datetime-local',id:'end',l:'Despertó (déjalo vacío si sigue dormido)',v:e.end?toLocalInput(e.end):''}];
+    build=()=>{ const s=fromLocalInput(val('ts')), en=val('end')?fromLocalInput(val('end')):null; if(en!=null&&en<=s) return 'La hora de despertar debe ser después de dormirse.'; return {type,ts:s,end:en}; };
+  } else if(type==='breast'){
+    title='Pecho';
+    fields=[{t:'seg',id:'side',l:'Lado',v:e.side,o:[['izq','Izquierdo'],['der','Derecho']]},{t:'datetime-local',id:'ts',l:'Inicio',v:toLocalInput(e.ts)},
+      {t:'number',id:'min',l:'Duración (min), vacío si sigue en curso',v:e.end?Math.round((e.end-e.ts)/60000):'',step:'1'}];
+    build=()=>{ const s=fromLocalInput(val('ts')), m=num('min'); return {type,ts:s,side:val('side'),end:m!=null&&m>0?s+m*60000:null}; };
+  }
+  if(!fields) return;
+  openSheet({title:(edit?'Editar · ':'')+title,fields,saveLabel:edit?'Guardar cambios':'Guardar',
+    onSave:async()=>{
+      const r=build(); if(typeof r==='string'){ toast(r); return false; }
+      if(r.ts==null){ toast('Revisa la fecha y la hora.'); return false; }
+      const out=Object.assign({},e||{},r); if(!out.id) out.id=newId(); if(!out.who&&S.me) out.who=S.me;
+      const prev=edit?JSON.parse(JSON.stringify(e)):null;
+      await write('events',out.id,out);
+      toast(edit?'Cambios guardados':'Guardado',edit?()=>write('events',prev.id,prev):()=>remove('events',out.id)); return true;
+    },
+    onDelete:edit?async()=>{ const c=JSON.parse(JSON.stringify(e)); await remove('events',e.id); toast('Registro eliminado',()=>write('events',c.id,c)); return true; }:null});
+}
+function growthSheet(g){
+  const edit=!!g;
+  openSheet({title:edit?'Editar medida':'Peso y talla',saveLabel:'Guardar',
+    fields:[{t:'date',id:'date',l:'Fecha',v:toLocalInput(g?g.ts:Date.now()).slice(0,10)},
+      {t:'number',id:'kg',l:'Peso (kg)',v:g&&g.kg!=null?g.kg:'',ph:'Ej. 6.40',step:'0.01'},
+      {t:'number',id:'cm',l:'Talla (cm)',v:g&&g.cm!=null?g.cm:'',ph:'Ej. 62',step:'0.1'},
+      {t:'number',id:'head',l:'Perímetro de la cabeza (cm), opcional',v:g&&g.head!=null?g.head:'',ph:'Ej. 41',step:'0.1'}],
+    onSave:async()=>{
+      const kg=num('kg'),cm=num('cm'),head=num('head'), d=val('date');
+      if(!d){ toast('Elige la fecha.'); return false; }
+      if(kg==null&&cm==null&&head==null){ toast('Escribe al menos una medida.'); return false; }
+      if((kg!=null&&(kg<=0||kg>40))||(cm!=null&&(cm<=0||cm>150))||(head!=null&&(head<=0||head>80))){ toast('Revisa los valores: parecen fuera de rango.'); return false; }
+      const o={ts:new Date(d+'T12:00:00').getTime()}; if(kg!=null) o.kg=kg; if(cm!=null) o.cm=cm; if(head!=null) o.head=head;
+      const id=g?g.id:newId(), prev=g?JSON.parse(JSON.stringify(g)):null; await write('growth',id,o);
+      toast('Medida guardada',prev?()=>write('growth',id,prev):()=>remove('growth',id)); return true;
+    },
+    onDelete:edit?async()=>{ const c=JSON.parse(JSON.stringify(g)); await remove('growth',g.id); toast('Medida eliminada',()=>write('growth',c.id,c)); return true; }:null});
+}
+function profileSheet(){
+  const p=S.profile;
+  openSheet({title:'Datos del bebé',noFocus:true,fields:[
+    {t:'text',id:'name',l:'Nombre',v:p.name||'',ph:'Nombre del bebé'},
+    {t:'date',id:'birth',l:'Fecha de nacimiento',v:p.birth||''},
+    {t:'seg',id:'sex',l:'Para comparar con las curvas de la OMS',v:p.sex||'',o:[['nino','Niño'],['nina','Niña'],['','Sin comparar']]}],
+    onSave:async()=>{ const prev=JSON.parse(JSON.stringify(S.profile||{})); await saveProfile({name:val('name'),birth:val('birth'),sex:val('sex')}); toast('Datos del bebé guardados',()=>saveProfile(prev)); return true; }});
+}
+
+/* ---------- estadísticas ---------- */
+function dayStats(ds){
+  const de=ds+DAY, r={sleepMs:0,sleeps:0,breast:0,breastMs:0,bottle:0,ml:0,solid:0,diapers:0,pipi:0,popo:0,meds:0,fev:null};
+  const now=Date.now();
+  for(const e of S.events){
+    if(e.type==='sleep'){ const o=Math.min(e.end||now,de)-Math.max(e.ts,ds); if(o>0){ r.sleepMs+=o; r.sleeps++; } continue; }
+    if(e.ts<ds||e.ts>=de) continue;
+    if(e.type==='breast'){ r.breast++; r.breastMs+=(e.end||now)-e.ts; }
+    else if(e.type==='bottle'){ r.bottle++; r.ml+=e.ml||0; }
+    else if(e.type==='solid') r.solid++;
+    else if(e.type==='diaper'){ r.diapers++; if(e.kind!=='popo') r.pipi++; if(e.kind!=='pipi') r.popo++; }
+    else if(e.type==='med'||e.type==='vaccine') r.meds++;
+    else if(e.type==='fever'){ r.fev=r.fev==null?e.temp:Math.max(r.fev,e.temp); }
+  }
+  r.feeds=r.breast+r.bottle+r.solid; return r;
+}
+function sleepH(ms){ return Math.round(ms/36e5*10)/10; }
+function fmtH(ms){ const m=Math.round(ms/60000); return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min'; }
+
+/* ---------- vistas ---------- */
+function viewHoy(){
+  const now=Date.now(), os=openSleep(), ob=openBreast(), t=dayStats(startOfDay(now));
+  const lastEnd=S.events.find(e=>e.type==='sleep'&&e.end);
+  const lastFeed=S.events.find(e=>FEED.includes(e.type)&&(e.type!=='breast'||true));
+  const feedTs=lastFeed?(lastFeed.type==='breast'&&lastFeed.end?lastFeed.end:lastFeed.ts):null;
+  const tile=(k,v,s)=>'<div class="tile"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>';
+  const sleepTile=os?tile('Sueño','Dormido','<span class="tick" data-ts="'+os.ts+'" data-m="since"></span>')
+    :tile('Sueño','Despierto',lastEnd?'<span class="tick" data-ts="'+lastEnd.end+'" data-m="since"></span>':'sin registros');
+  const feedTile=tile('Última toma',feedTs?'<span class="tick" data-ts="'+feedTs+'" data-m="since"></span>':'—',lastFeed?esc(evInfo(lastFeed).t):'sin registros');
+  const dayTile=tile('Hoy',t.feeds+' tomas',t.diapers+' pañales · '+sleepH(t.sleepMs)+' h');
+  const side=(s,l)=>{ const on=ob&&ob.side===s;
+    return '<button class="act c-feed'+(on?' on':'')+'" data-act="breast" data-side="'+s+'">'+ic('heart')+'<span>Pecho '+l+'</span><small>'+(on?'<span class="tick" data-ts="'+ob.ts+'" data-m="clock"></span> · toca para parar':'toca para empezar')+'</small></button>'; };
+  const recent=S.events.slice(0,6);
+  return '<div class="status">'+sleepTile+feedTile+dayTile+'</div>'+insHTML(homeInsights())
+  +'<div class="sec">Sueño</div>'
+  +'<button class="act big c-sleep'+(os?' on':'')+'" style="width:100%" data-act="sleep">'+ic(os?'sun':'moon')+'<span>'+(os?'Despertó':'Se durmió')+'<small>'+(os?'Durmiendo hace <span class="tick" data-ts="'+os.ts+'" data-m="dur"></span>':'Un toque para registrar')+'</small></span></button>'
+  +'<div class="sec">Comida</div><div class="grid g2">'+side('izq','izquierdo')+side('der','derecho')
+  +'<button class="act c-feed" data-act="bottle">'+ic('bottle')+'<span>Biberón</span><small>fórmula o leche materna</small></button>'
+  +'<button class="act c-feed" data-act="solid">'+ic('spoon')+'<span>Sólidos</span><small>papillas y más</small></button></div>'
+  +'<div class="sec">Pañal</div><div class="grid g3">'
+  +'<button class="act c-diaper" data-act="diaper" data-kind="pipi">'+ic('drop')+'<span>Pipí</span></button>'
+  +'<button class="act c-diaper" data-act="diaper" data-kind="popo">'+ic('drop')+'<span>Popó</span></button>'
+  +'<button class="act c-diaper" data-act="diaper" data-kind="ambos">'+ic('drop')+'<span>Ambos</span></button></div>'
+  +'<div class="sec">Salud</div><div class="grid g3">'
+  +'<button class="act c-health" data-act="med">'+ic('pill')+'<span>Medicina</span></button>'
+  +'<button class="act c-health" data-act="fever">'+ic('therm')+'<span>Fiebre</span></button>'
+  +'<button class="act c-health" data-act="vaccine">'+ic('syringe')+'<span>Vacuna</span></button></div>'
+  +'<div class="sec">Últimos registros</div>'
+  +(recent.length?'<div class="list">'+recent.map(rowHTML).join('')+'</div>':'<div class="empty">Aún no hay registros. Toca un botón para empezar.</div>');
+}
+function viewHist(){
+  if(!S.events.length) return '<h2 class="dayh">Historial</h2><div class="empty">Aquí aparecerán todos los registros, del más reciente al más antiguo.</div>';
+  let out='<h2 class="dayh" style="margin-top:4px">Historial</h2>', cur=null;
+  for(const e of S.events){
+    const d=startOfDay(e.ts);
+    if(d!==cur){ if(cur!==null) out+='</div>'; cur=d; out+='<div class="dayh">'+esc(dayLabel(e.ts))+'</div><div class="list">'; }
+    out+=rowHTML(e);
+  }
+  return out+'</div><p class="note">Se muestran los últimos 1000 registros. Toca un registro para corregirlo, o el bote de basura para borrarlo.</p>';
+}
+/* ---------- OMS: tablas LMS, 0 a 24 meses ---------- */
+const LMS = {
+  nino:{
+    kg:[[.3487,3.3464,.14602],[.2297,4.4709,.13395],[.197,5.5675,.12385],[.1738,6.3762,.11727],[.1553,7.0023,.11316],[.1395,7.5105,.1108],[.1257,7.934,.10958],[.1134,8.297,.10902],[.1021,8.6151,.10882],[.0917,8.9014,.10881],[.082,9.1649,.10891],[.073,9.4122,.10906],[.0644,9.6479,.10925],[.0563,9.8749,.10949],[.0487,10.0953,.10976],[.0413,10.3108,.11007],[.0343,10.5228,.11041],[.0275,10.7319,.11079],[.0211,10.9385,.11119],[.0148,11.143,.11164],[.0087,11.3462,.11211],[.0029,11.5486,.11261],[-.0028,11.7504,.11314],[-.0083,11.9514,.11369],[-.0137,12.1515,.11426]],
+    cm:[49.8842,54.7244,58.4249,61.4292,63.886,65.9026,67.6236,69.1645,70.5994,71.9687,73.2812,74.5388,75.7488,76.9186,78.0497,79.1458,80.2113,81.2487,82.2587,83.2418,84.1996,85.1348,86.0477,86.941,87.8161],
+    cmS:[.03795,.03557,.03424,.03328,.03257,.03204,.03165,.03139,.03124,.03117,.03118,.03125,.03137,.03154,.03174,.03197,.03222,.0325,.03279,.0331,.03342,.03376,.0341,.03445,.03479],
+    head:[34.4618,37.2759,39.1285,40.5135,41.6317,42.5576,43.3306,43.9803,44.53,44.9998,45.4051,45.7573,46.0661,46.3395,46.5844,46.806,47.0088,47.1962,47.3711,47.5357,47.6919,47.8408,47.9833,48.1201,48.2515],
+    headS:[.03686,.03133,.02997,.02918,.02868,.02837,.02817,.02804,.02796,.02792,.0279,.02789,.02789,.02789,.02791,.02792,.02795,.02797,.028,.02803,.02806,.0281,.02813,.02817,.02821]
+  },
+  nina:{
+    kg:[[.3809,3.2322,.14171],[.1714,4.1873,.13724],[.0962,5.1282,.13],[.0402,5.8458,.12619],[-.005,6.4237,.12402],[-.043,6.8985,.12274],[-.0756,7.297,.12204],[-.1039,7.6422,.12178],[-.1288,7.9487,.12181],[-.1507,8.2254,.12199],[-.17,8.48,.12223],[-.1872,8.7192,.12247],[-.2024,8.9481,.12268],[-.2158,9.1699,.12283],[-.2278,9.387,.12294],[-.2384,9.6008,.12299],[-.2478,9.8124,.12303],[-.2562,10.0226,.12306],[-.2637,10.2315,.12309],[-.2703,10.4393,.12315],[-.2762,10.6464,.12323],[-.2815,10.8534,.12335],[-.2862,11.0608,.1235],[-.2903,11.2688,.12369],[-.2941,11.4775,.1239]],
+    cm:[49.1477,53.6872,57.0673,59.8029,62.0899,64.0301,65.7311,67.2873,68.7498,70.1435,71.4818,72.771,74.015,75.2176,76.3817,77.5099,78.6055,79.671,80.7079,81.7182,82.7036,83.6654,84.604,85.5202,86.4153],
+    cmS:[.0379,.0364,.03568,.0352,.03486,.03463,.03448,.03441,.0344,.03444,.03452,.03464,.03479,.03496,.03514,.03534,.03555,.03576,.03598,.0362,.03643,.03666,.03688,.03711,.03734],
+    head:[33.8787,36.5463,38.2521,39.5328,40.5817,41.459,42.1995,42.829,43.3671,43.83,44.2319,44.5844,44.8965,45.1752,45.4265,45.6551,45.865,46.0598,46.2424,46.4152,46.5801,46.7384,46.8913,47.0391,47.1822],
+    headS:[.03496,.0321,.03168,.0314,.03119,.03102,.03087,.03075,.03063,.03053,.03044,.03035,.03027,.03019,.03012,.03006,.03,.02994,.02989,.02985,.02981,.02978,.02975,.02972,.0297]
+  }
+};
+function lmsRow(sex,m,i){ const t=LMS[sex]; return m==='kg'?t.kg[i]:[1,t[m][i],t[m+'S'][i]]; }
+function lmsAt(sex,m,age){
+  if(!LMS[sex]||age==null||age<0||age>24) return null;
+  const i=Math.min(23,Math.floor(age)), f=age-i, a=lmsRow(sex,m,i), b=lmsRow(sex,m,i+1);
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+}
+const zOf=(x,[L,M,Sd])=>Math.abs(L)<1e-6?Math.log(x/M)/Sd:(Math.pow(x/M,L)-1)/(L*Sd);
+const valAtZ=(z,[L,M,Sd])=>Math.abs(L)<1e-6?M*Math.exp(Sd*z):M*Math.pow(1+L*Sd*z,1/L);
+function phi(z){ const t=1/(1+0.2316419*Math.abs(z)), d=0.3989423*Math.exp(-z*z/2);
+  const p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); return z>0?1-p:p; }
+function pctText(z){ const p=phi(z)*100; if(p<1) return 'menos de 1'; if(p>99) return 'más de 99'; return String(Math.round(p)); }
+const BANDS=[[-1.881,'P3'],[-1.036,'P15'],[0,'P50'],[1.036,'P85'],[1.881,'P97']];
+const birthTs=()=>S.profile.birth?new Date(S.profile.birth+'T00:00:00').getTime():null;
+const ageAt=ts=>{ const b=birthTs(); return b==null?null:(ts-b)/MONTH; };
+const nf=(v,d)=>Number(v).toLocaleString('es',{maximumFractionDigits:d==null?1:d});
+
+/* ---------- tarjetas de análisis ---------- */
+const LVL={ok:['Bien','diaper'],warn:['Atención','health'],info:['Dato','accent']};
+function insHTML(list){
+  if(!list.length) return '';
+  return '<div class="inslist">'+list.map(x=>'<div class="ins" style="--lc:var(--'+LVL[x.l][1]+')"><span class="chip">'+LVL[x.l][0]+'</span><div><div class="it">'+esc(x.t)+'</div>'+(x.d?'<div class="id">'+esc(x.d)+'</div>':'')+'</div></div>').join('')+'</div>';
+}
+
+/* ---------- curvas de crecimiento ---------- */
+function growthChart(m){
+  const M=METRICS[m], b=birthTs(), sex=S.profile.sex;
+  const rows=S.growth.filter(g=>g[m]!=null);
+  if(!rows.length) return '<div class="empty">Aún no hay medidas de '+M.label.toLowerCase()+'.</div>';
+  const base=b!=null?b:rows[0].ts;
+  const pts=rows.map(g=>({x:Math.max(0,(g.ts-base)/MONTH),y:g[m]}));
+  const hasRef=b!=null&&LMS[sex];
+  const nowX=b!=null?(Date.now()-b)/MONTH:0;
+  const dataMax=Math.max(...pts.map(p=>p.x),nowX);
+  const xmax=Math.max(6,Math.min(Math.max(24,Math.ceil(dataMax)),Math.ceil(dataMax+2)));
+  const bands=[];
+  if(hasRef){ for(let x=0;x<=Math.min(24,xmax)+1e-9;x+=0.25){ const r=lmsAt(sex,m,x); bands.push({x,v:BANDS.map(z=>valAtZ(z[0],r))}); } }
+  const ys=pts.map(p=>p.y); bands.forEach(bd=>ys.push(bd.v[0],bd.v[4]));
+  let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo)*0.06||1; lo-=pad; hi+=pad;
+  const step=niceStep(hi-lo); lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const W=340,H=250,L=36,R=34,T=12,B=32;
+  const X=x=>L+x/xmax*(W-L-R), Y=y=>T+(1-(y-lo)/(hi-lo))*(H-T-B);
+  const P=(arr,k)=>arr.map(bd=>X(bd.x).toFixed(1)+','+Y(bd.v[k]).toFixed(1));
+  let g='';
+  for(let v=lo;v<=hi+1e-9;v+=step) g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="'+(L-5)+'" y="'+(Y(v)+3.5)+'" text-anchor="end">'+nf(v,2)+'</text>';
+  const xs=xmax<=6?1:(xmax<=12?2:3);
+  for(let x=0;x<=xmax;x+=xs) g+='<text x="'+X(x)+'" y="'+(H-14)+'" text-anchor="middle">'+x+'</text>';
+  g+='<text x="'+((L+W-R)/2)+'" y="'+(H-1)+'" text-anchor="middle">'+(b!=null?'edad en meses':'meses desde la primera medida')+'</text>';
+  if(bands.length>1){
+    g+='<polygon points="'+P(bands,0).concat(P(bands,4).reverse()).join(' ')+'" fill="var(--grow)" fill-opacity=".10"/>';
+    g+='<polygon points="'+P(bands,1).concat(P(bands,3).reverse()).join(' ')+'" fill="var(--grow)" fill-opacity=".13"/>';
+    [0,4].forEach(k=>{ g+='<polyline fill="none" stroke="var(--grow)" stroke-opacity=".45" stroke-width="1" points="'+P(bands,k).join(' ')+'"/>'; });
+    g+='<polyline fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" points="'+P(bands,2).join(' ')+'"/>';
+    const lb=bands[bands.length-1];
+    [[4,'P97'],[2,'P50'],[0,'P3']].forEach(([k,n])=>{ g+='<text x="'+(X(lb.x)+4)+'" y="'+(Y(lb.v[k])+3.5)+'">'+n+'</text>'; });
+  }
+  if(b!=null&&nowX<=xmax) g+='<line x1="'+X(nowX)+'" x2="'+X(nowX)+'" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--accent)" stroke-opacity=".5" stroke-dasharray="2 3"/><text x="'+X(nowX)+'" y="'+(T+9)+'" text-anchor="middle" style="fill:var(--accent)">hoy</text>';
+  if(pts.length>1) g+='<polyline fill="none" stroke="var(--grow)" stroke-width="2.6" stroke-linejoin="round" points="'+pts.map(p=>X(p.x).toFixed(1)+','+Y(p.y).toFixed(1)).join(' ')+'"/>';
+  pts.forEach((p,i)=>{ const last=i===pts.length-1; g+='<circle cx="'+X(p.x).toFixed(1)+'" cy="'+Y(p.y).toFixed(1)+'" r="'+(last?5.5:3.5)+'" fill="var(--grow)" stroke="var(--bg)" stroke-width="2"/>'; });
+  const lp=pts[pts.length-1], anchor=X(lp.x)>W-90?'end':(X(lp.x)<L+40?'start':'middle');
+  g+='<text x="'+X(lp.x).toFixed(1)+'" y="'+(Y(lp.y)-11).toFixed(1)+'" text-anchor="'+anchor+'" style="fill:var(--ink);font-weight:700;font-size:12px">'+nf(lp.y,2)+' '+M.unit+'</text>';
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Curva de '+M.label.toLowerCase()+' con percentiles de la OMS">'+g+'</svg>'
+   +'<div class="legend"><span><i></i>'+esc(S.profile.name||'Tu bebé')+'</span>'+(bands.length?'<span><i class="d"></i>Mediana (P50)</span><span><i class="band"></i>Rango P3 a P97</span>':'')+'</div>';
+}
+function growthInsights(m){
+  const M=METRICS[m], sex=S.profile.sex, b=birthTs(), out=[];
+  const rows=S.growth.filter(g=>g[m]!=null);
+  if(!rows.length) return out;
+  if(b==null||!LMS[sex]){ out.push({l:'info',t:'Agrega la fecha de nacimiento y si es niño o niña para comparar con la OMS.'}); }
+  const last=rows[rows.length-1], ageL=ageAt(last.ts);
+  const unitTxt=v=>nf(v,M.dec)+' '+M.unit;
+  let zL=null;
+  if(b!=null&&LMS[sex]&&ageL!=null&&ageL<=24){
+    const r=lmsAt(sex,m,ageL); zL=zOf(last[m],r); const p=phi(zL)*100;
+    out.push({l:(p>=3&&p<=97)?'ok':'warn',
+      t:M.label+' en el percentil '+pctText(zL)+' para su edad',
+      d:(p>=3&&p<=97?'Dentro del rango habitual (P3 a P97). ':'Fuera del rango habitual (P3 a P97): coméntalo con el pediatra. ')+'La mediana de la OMS a esa edad es '+unitTxt(r[1])+'; su medida fue '+unitTxt(last[m])+'.'});
+  }
+  if(rows.length>=2){
+    const prev=rows[rows.length-2], days=(last.ts-prev.ts)/DAY;
+    if(days>=3){
+      const diff=last[m]-prev[m];
+      let exp=null;
+      if(b!=null&&LMS[sex]){ const a1=ageAt(prev.ts), a2=ageL; if(a1!=null&&a2<=24&&a1>=0){ exp=(lmsAt(sex,m,a2)[1]-lmsAt(sex,m,a1)[1]); } }
+      if(m==='kg'){
+        const gpd=diff*1000/days, epd=exp!=null?exp*1000/days:null;
+        out.push({l:diff<0?'warn':(epd!=null&&gpd<epd*0.6?'info':'ok'),
+          t:(diff<0?'Bajó ':'Subió ')+nf(Math.abs(diff)*1000,0)+' g en '+Math.round(days)+' días ('+nf(gpd,0)+' g al día)',
+          d:(epd!=null?'Lo que gana un bebé en la mediana de la OMS en ese mismo periodo: unos '+nf(epd,0)+' g al día. ':'')+(diff<0?'Una baja de peso merece consultarse con el pediatra.':'Lo que más importa es que siga su propia curva.')});
+      } else {
+        const pm=diff/days*30.4, em=exp!=null?exp/days*30.4:null;
+        out.push({l:diff<0?'info':'ok',t:(diff<0?'Cambió ':'Creció ')+nf(diff,1)+' cm en '+Math.round(days)+' días ('+nf(pm,1)+' cm al mes)',
+          d:(em!=null?'Referencia de la mediana OMS para ese periodo: '+nf(em,1)+' cm al mes. ':'')+(diff<0?'Puede ser una diferencia de medición; revisa el dato.':'')});
+      }
+      if(zL!=null){
+        const a1=ageAt(prev.ts); const r1=lmsAt(sex,m,a1);
+        if(r1){ const z1=zOf(prev[m],r1), dz=zL-z1;
+          if(dz<=-0.67) out.push({l:'warn',t:'Pasó del percentil '+pctText(z1)+' al '+pctText(zL),d:'Bajar más de una línea de percentil entre controles es algo para revisar con el pediatra.'});
+          else if(dz>=0.67) out.push({l:'info',t:'Subió del percentil '+pctText(z1)+' al '+pctText(zL),d:'Ganó posición en la curva entre los dos últimos controles.'});
+          else out.push({l:'ok',t:'Sigue su curva',d:'Entre los dos últimos controles se mantuvo cerca del mismo percentil ('+pctText(z1)+' y '+pctText(zL)+').'});
+        }
+      }
+    }
+  }
+  const ago=(Date.now()-last.ts)/DAY, aNow=ageAt(Date.now());
+  if(ago>(aNow!=null&&aNow<6?35:65)) out.push({l:'info',t:'La última medida fue hace '+Math.round(ago)+' días',d:'Agrega la del próximo control para mantener la curva al día.'});
+  return out;
+}
+
+/* ---------- análisis de actividad ---------- */
+function hasRec(ds){ const de=ds+DAY, now=Date.now();
+  return S.events.some(e=>(e.ts>=ds&&e.ts<de)||(e.type==='sleep'&&e.ts<de&&(e.end||now)>ds)); }
+const median=a=>{ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y), k=s.length>>1; return s.length%2?s[k]:(s[k-1]+s[k])/2; };
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function fmtTOD(mins){ const d=new Date(); d.setHours(0,mins,0,0); return hm(d.getTime()); }
+function sleepRef(a){ if(a==null) return null; if(a<4) return [14,17]; if(a<12) return [12,15]; if(a<=24) return [11,14]; return null; }
+function wakeWindow(a){ if(a==null) return null;
+  const t=[[1,35,60],[2,60,90],[4,75,120],[6,105,150],[8,120,180],[10,150,210],[14,180,240],[99,240,360]];
+  const r=t.find(x=>a<x[0]); return [r[1],r[2]]; }
+function feedInterval(from,to){
+  const f=S.events.filter(e=>(e.type==='breast'||e.type==='bottle')&&e.ts>=from&&e.ts<to).map(e=>e.ts).sort((a,b)=>a-b);
+  const iv=[]; for(let i=1;i<f.length;i++){ const d=f[i]-f[i-1]; if(d>=15*60000&&d<=8*36e5) iv.push(d); }
+  return median(iv);
+}
+function analyze(){
+  const t0=startOfDay(Date.now()), aNow=ageAt(Date.now());
+  let cur=[],prev=[],partial=false;
+  for(let i=1;i<=7;i++){ const d=t0-i*DAY; if(hasRec(d)) cur.push(d); }
+  for(let i=8;i<=14;i++){ const d=t0-i*DAY; if(hasRec(d)) prev.push(d); }
+  if(!cur.length&&hasRec(t0)){ cur=[t0]; partial=true; }
+  const R={sleep:[],feed:[],diaper:[],health:[],days:cur.length,partial};
+  if(!cur.length) return R;
+  const from=Math.min(...cur), to=Math.max(...cur)+DAY;
+  const ds=cur.map(dayStats), ps=prev.map(dayStats);
+  const inR=e=>e.ts>=from&&e.ts<to;
+  const nd=cur.length, dTxt=partial?'con lo registrado hoy (día incompleto)':'en '+nd+(nd===1?' día registrado':' días registrados');
+
+  /* sueño */
+  const avgSleep=mean(ds.map(d=>d.sleepMs));
+  if(avgSleep>0){
+    const ref=sleepRef(aNow), h=avgSleep/36e5;
+    let l='info', d='';
+    if(ref){ l=h>=ref[0]&&h<=ref[1]?'ok':'info'; d='Para su edad se recomiendan '+ref[0]+' a '+ref[1]+' h en 24 horas, contando siestas.'+(h<ref[0]?' Si faltó anotar algún sueño, el total se ve más bajo.':''); }
+    if(ps.length){ const pa=mean(ps.map(x=>x.sleepMs)); if(pa>0){ const dm=Math.round((avgSleep-pa)/60000); if(Math.abs(dm)>=10) d+=' Frente a la semana anterior: '+(dm>0?'+':'−')+fmtDur(Math.abs(dm)*60000)+' por día.'; } }
+    R.sleep.push({l,t:'Duerme en promedio '+fmtH(avgSleep)+' al día',d:d.trim()+' ('+dTxt+').'});
+  }
+  const sess=S.events.filter(e=>e.type==='sleep'&&e.end&&inR(e));
+  if(sess.length){
+    const lg=sess.reduce((a,b)=>(b.end-b.ts)>(a.end-a.ts)?b:a);
+    R.sleep.push({l:'info',t:'Su sueño más largo seguido: '+fmtDur(lg.end-lg.ts),d:dayLabel(lg.ts)+', desde las '+hm(lg.ts)+'. Promedio de cada periodo de sueño: '+fmtDur(mean(sess.map(s=>s.end-s.ts)))+'.'});
+    let night=0,tot=0;
+    sess.forEach(s=>{ for(let t=s.ts;t<s.end;t+=60000){ const h=new Date(t).getHours(); tot++; if(h>=19||h<7) night++; } });
+    if(tot) R.sleep.push({l:'info',t:Math.round(night/tot*100)+' % de su sueño fue de noche',d:'Se cuenta como noche de 7 pm a 7 am. '+(aNow!=null&&aNow<3?'En los primeros meses es normal que el sueño se reparta entre día y noche.':'Con los meses, el sueño tiende a concentrarse en la noche.')});
+    const bed=sess.filter(s=>{ const h=new Date(s.ts).getHours(); return h>=18&&(s.end-s.ts)>=2*36e5; }).map(s=>{ const d=new Date(s.ts); return d.getHours()*60+d.getMinutes(); });
+    if(bed.length>=2) R.sleep.push({l:'info',t:'Suele dormirse de noche cerca de las '+fmtTOD(Math.round(mean(bed))),d:'Calculado con '+bed.length+' noches. Una rutina con hora parecida cada día ayuda a regular el sueño.'});
+  }
+
+  /* comida */
+  const avgFeeds=mean(ds.map(d=>d.breast+d.bottle));
+  const iv=feedInterval(from,to);
+  if(avgFeeds>0){
+    const brAny=ds.some(d=>d.breast>0);
+    let l='info', d=iv?'Tiempo típico entre tomas: '+fmtDur(iv)+'.':'';
+    if(brAny&&aNow!=null&&aNow<3){ l=avgFeeds>=8&&avgFeeds<=12?'ok':'info'; d+=' Con pecho, en los primeros meses lo habitual son 8 a 12 tomas al día.'; }
+    R.feed.push({l,t:nf(avgFeeds)+' tomas al día en promedio (pecho y biberón)',d:d.trim()});
+  }
+  const br=S.events.filter(e=>e.type==='breast'&&e.end&&inR(e));
+  if(br.length){
+    const mins=s=>br.filter(e=>e.side===s).reduce((a,e)=>a+(e.end-e.ts),0), li=mins('izq'), de=mins('der'), tot=li+de;
+    const pl=tot?Math.round(li/tot*100):50;
+    const lastB=S.events.find(e=>e.type==='breast');
+    R.feed.push({l:Math.abs(pl-50)>15?'info':'ok',t:'Pecho: '+fmtDur(mean(br.map(e=>e.end-e.ts)))+' por toma en promedio',
+      d:'Tiempo por lado: izquierdo '+pl+' %, derecho '+(100-pl)+' %. '+(Math.abs(pl-50)>15?'Conviene alternar más los lados. ':'Los lados están equilibrados. ')+(lastB?'La última toma fue del lado '+SIDE[lastB.side]+'.':'')});
+  }
+  const avgMl=mean(ds.map(d=>d.ml));
+  if(avgMl>0){
+    const bt=S.events.filter(e=>e.type==='bottle'&&inR(e));
+    const mat=bt.filter(e=>e.kind==='materna').reduce((a,e)=>a+(e.ml||0),0), all=bt.reduce((a,e)=>a+(e.ml||0),0);
+    let d='Promedio por biberón: '+nf(mean(bt.map(e=>e.ml||0)),0)+' ml. '+(all?Math.round(mat/all*100)+' % leche materna, '+(100-Math.round(mat/all*100))+' % fórmula.':'');
+    if(ps.length){ const pm=mean(ps.map(x=>x.ml)); if(pm>0){ const dd=avgMl-pm; if(Math.abs(dd)>=20) d+=' Frente a la semana anterior: '+(dd>0?'+':'−')+nf(Math.abs(dd),0)+' ml por día.'; } }
+    const lastW=[...S.growth].reverse().find(g=>g.kg!=null);
+    if(!br.length&&lastW&&aNow!=null&&aNow<6) d+=' Referencia general solo con biberón: unos '+nf(Math.min(950,lastW.kg*150),0)+' ml al día (150 ml por kg, máximo cerca de 950 ml). Tu pediatra puede darte la cifra exacta.';
+    R.feed.push({l:'info',t:'Biberón: '+nf(avgMl,0)+' ml al día en promedio',d:d.trim()});
+  }
+  const sol=S.events.filter(e=>e.type==='solid'&&e.ts>=Date.now()-14*DAY);
+  if(sol.length){
+    const foods=[...new Set(sol.map(e=>(e.food||'').trim().toLowerCase()).filter(Boolean))];
+    R.feed.push({l:aNow!=null&&aNow<5.5?'info':'ok',t:sol.length+(sol.length===1?' comida sólida':' comidas sólidas')+' en 14 días',
+      d:(foods.length?'Alimentos: '+foods.slice(0,12).join(', ')+'. ':'')+(aNow!=null&&aNow<5.5?'La OMS recomienda empezar los sólidos alrededor de los 6 meses; confírmalo con el pediatra.':'Ofrecer un alimento nuevo a la vez ayuda a notar si alguno le cae mal.')});
+  }
+
+  /* pañales */
+  const avgD=mean(ds.map(d=>d.diapers));
+  if(avgD>0){
+    const wet=mean(ds.map(d=>d.pipi)), dirty=mean(ds.map(d=>d.popo));
+    const ok=aNow==null||aNow<0.25||wet>=6;
+    R.diaper.push({l:ok?'ok':'warn',t:nf(avgD)+' pañales al día en promedio',
+      d:nf(wet)+' con pipí y '+nf(dirty)+' con popó por día. '+(ok?'Seis o más pañales mojados al día suele indicar que come lo suficiente.':'Lo habitual son 6 o más pañales mojados al día. Si no es por falta de registros, coméntalo con el pediatra.')});
+  }
+  const lastPoo=S.events.find(e=>e.type==='diaper'&&e.kind!=='pipi');
+  if(lastPoo) R.diaper.push({l:'info',t:'Último popó hace '+fmtDur(Date.now()-lastPoo.ts),d:'Con lactancia materna puede pasar varios días sin popó y ser normal, si está tranquilo y come bien.'});
+
+  /* salud */
+  const fev=S.events.filter(e=>e.type==='fever'&&e.ts>=Date.now()-7*DAY);
+  if(fev.length){
+    const mx=fev.reduce((a,b)=>b.temp>a.temp?b:a), recent=fev.filter(e=>e.ts>=Date.now()-48*36e5&&e.temp>=38);
+    let l='ok',d='Máxima: '+nf(mx.temp)+' °C ('+dayLabel(mx.ts)+', '+hm(mx.ts)+').';
+    if(recent.length){ l='warn'; d+=aNow!=null&&aNow<3?' En bebés menores de 3 meses, 38 °C o más es motivo para consultar al médico de inmediato.':' Hubo fiebre (38 °C o más) en las últimas 48 horas. Consulta si dura más de 2 o 3 días, si está muy decaído o si te preocupa.'; }
+    R.health.push({l,t:fev.length+(fev.length===1?' toma de temperatura':' tomas de temperatura')+' en 7 días',d});
+  }
+  const meds=S.events.filter(e=>e.type==='med'&&e.ts>=Date.now()-7*DAY);
+  if(meds.length){
+    const by={}; meds.forEach(e=>{ const k=(e.name||'Medicina').trim(); (by[k]=by[k]||[]).push(e); });
+    Object.keys(by).forEach(k=>{ const a=by[k], last=a[0]; R.health.push({l:'info',t:k+': '+a.length+(a.length===1?' dosis':' dosis')+' en 7 días',d:'Última: '+dayLabel(last.ts)+', '+hm(last.ts)+(last.dose?' ('+last.dose+')':'')+'. Sigue siempre la indicación del pediatra.'}); });
+  }
+  const vac=S.events.filter(e=>e.type==='vaccine');
+  if(vac.length) R.health.push({l:'info',t:vac.length+(vac.length===1?' vacuna registrada':' vacunas registradas'),d:'Última: '+(vac[0].name||'vacuna')+', '+new Date(vac[0].ts).toLocaleDateString('es',{day:'numeric',month:'long'})+'. Revisa el carné para la próxima dosis.'});
+  return R;
+}
+function homeInsights(){
+  const out=[], now=Date.now(), aNow=ageAt(now);
+  const fev=S.events.find(e=>e.type==='fever'&&e.temp>=38&&e.ts>=now-48*36e5);
+  if(fev) out.push({l:'warn',t:'Fiebre de '+nf(fev.temp)+' °C '+dayLabel(fev.ts).toLowerCase()+' a las '+hm(fev.ts),d:aNow!=null&&aNow<3?'En menores de 3 meses, 38 °C o más es motivo para consultar al médico de inmediato.':'Vigila cómo sigue y consulta si te preocupa.'});
+  const os=openSleep();
+  if(!os){
+    const lastEnd=S.events.find(e=>e.type==='sleep'&&e.end), ww=wakeWindow(aNow);
+    if(lastEnd&&ww){ const m=(now-lastEnd.end)/60000;
+      out.push({l:m>ww[1]?'warn':'info',t:'Lleva despierto '+fmtDur(now-lastEnd.end),d:'A su edad, el tiempo despierto entre sueños suele ser de '+fmtDur(ww[0]*60000)+' a '+fmtDur(ww[1]*60000)+'. '+(m>ww[1]?'Puede estar cansado: busca señales de sueño.':(m>=ww[0]?'Pronto puede tener sueño.':''))}); }
+  }
+  const iv=feedInterval(now-7*DAY,now), lf=S.events.find(e=>e.type==='breast'||e.type==='bottle');
+  if(iv&&lf){ const next=lf.ts+iv; out.push({l:next<now?'warn':'info',t:next<now?'Ya pasó su intervalo habitual entre tomas':'Próxima toma cerca de las '+hm(next),d:'Suele comer cada '+fmtDur(iv)+'; la última toma empezó a las '+hm(lf.ts)+'.'}); }
+  const lb=S.events.find(e=>e.type==='breast');
+  if(lb&&!openBreast()) out.push({l:'info',t:'Siguiente pecho: '+(lb.side==='izq'?'derecho':'izquierdo'),d:'La última toma fue del lado '+SIDE[lb.side]+', a las '+hm(lb.ts)+'.'});
+  return out;
+}
+
+/* ---------- análisis con Claude ---------- */
+function aiPayload(){
+  const t0=startOfDay(Date.now()), days=[];
+  for(let i=13;i>=0;i--){ const d=t0-i*DAY; if(!hasRec(d)) continue; const s=dayStats(d);
+    days.push({fecha:new Date(d).toISOString().slice(0,10),horas_sueno:sleepH(s.sleepMs),periodos_sueno:s.sleeps,tomas_pecho:s.breast,min_pecho:Math.round(s.breastMs/60000),biberones:s.bottle,ml_biberon:s.ml,solidos:s.solid,panales:s.diapers,pipi:s.pipi,popo:s.popo,temp_max:s.fev,medicinas_vacunas:s.meds,dia_incompleto:d===t0}); }
+  const sex=S.profile.sex, growth=S.growth.map(g=>{ const a=ageAt(g.ts), o={fecha:new Date(g.ts).toISOString().slice(0,10),edad_meses:a!=null?Math.round(a*10)/10:null};
+    ['kg','cm','head'].forEach(m=>{ if(g[m]!=null){ o[m]=g[m]; const r=a!=null?lmsAt(sex,m,a):null; if(r) o['percentil_'+m]=pctText(zOf(g[m],r)); } }); return o; });
+  const A=analyze(), hallazgos=[].concat(A.sleep,A.feed,A.diaper,A.health,...['kg','cm','head'].map(growthInsights)).map(x=>x.t+(x.d?' — '+x.d:''));
+  const sol=S.events.filter(e=>e.type==='solid'&&e.ts>=Date.now()-14*DAY).map(e=>e.food);
+  const meds=S.events.filter(e=>(e.type==='med'||e.type==='vaccine')&&e.ts>=Date.now()-14*DAY).map(e=>({tipo:e.type==='med'?'medicina':'vacuna',nombre:e.name,dosis:e.dose||null,fecha:new Date(e.ts).toISOString().slice(0,16)}));
+  return {bebe:{nombre:S.profile.name||null,sexo:sex==='nino'?'niño':(sex==='nina'?'niña':null),edad:ageText()},dias:days,crecimiento:growth,solidos_14_dias:sol,medicinas_y_vacunas_14_dias:meds,hallazgos_calculados:hallazgos};
+}
+async function runAI(){
+  if(S.ai.busy) return;
+  let sample=null; try{ sample=await claude.use('sample'); }catch(e){}
+  if(!sample){ S.ai={busy:false,text:'',err:'El análisis con Claude no está disponible en esta vista.'}; render(); return; }
+  S.ai={busy:true,text:'',err:''}; render();
+  const prompt='Eres un asistente que ayuda a padres a entender el registro de su bebé. Escribe en español, con tono cálido y claro, frases cortas. '
+   +'Analiza SOLO los datos de abajo (registros de los últimos 14 días, medidas de crecimiento con percentiles OMS y hallazgos ya calculados). '
+   +'Estructura: un párrafo de resumen general; luego secciones con "## " para Sueño, Alimentación, Pañales, Salud y Crecimiento (omite las que no tengan datos); '
+   +'en cada una, 2 a 4 viñetas con "- " con patrones, tendencias o cambios entre días que veas en los números; al final "## Para comentar con el pediatra" con lo que valga la pena preguntar (si no hay nada, dilo). '
+   +'No diagnostiques ni indiques dosis de medicamentos. Si un dato parece incompleto (días con pocos registros o el día de hoy), dilo en vez de sacar conclusiones. No inventes datos. Máximo 350 palabras.\n\nDATOS:\n'+JSON.stringify(aiPayload());
+  try{
+    const r=await sample(prompt,{modelTier:'default',onText:({text})=>{ S.ai.text=text; const el=document.getElementById('aitext'); if(el) el.innerHTML=md(text); }});
+    S.ai={busy:false,text:r.text||S.ai.text,err:''};
+  }catch(e){
+    S.ai={busy:false,text:(e&&e.text)||'',err:e&&e.code==='rate_limited'?'Se hicieron muchas consultas seguidas. Espera un momento y vuelve a intentar.':(e&&e.code==='not_granted'?'No diste permiso para consultar a Claude.':'No se pudo generar el análisis. Intenta de nuevo.')};
+  }
+  render();
+}
+function md(t){
+  let h=esc(t).split('\n').map(l=>{ if(/^#{1,4}\s/.test(l)) return '<h4>'+l.replace(/^#{1,4}\s/,'')+'</h4>'; if(/^\s*[-•*]\s/.test(l)) return '<li>'+l.replace(/^\s*[-•*]\s/,'')+'</li>'; return l.trim()?'<p>'+l+'</p>':''; }).join('');
+  return h.replace(/(?:<li>.*?<\/li>)+/g,m=>'<ul>'+m+'</ul>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+}
+
+/* ---------- vistas ---------- */
+function barChart(title,vals,labels,color,fmt,sel){
+  const max=Math.max(...vals,0.0001);
+  return '<div class="card c-'+color+'"><h3>'+title+'</h3><div class="bars" role="img" aria-label="'+esc(title)+': '+vals.map((v,i)=>labels[i]+' '+fmt(v)).join(', ')+'">'
+   +vals.map((v,i)=>'<div class="bar'+(i===sel?' sel':'')+'"><b>'+fmt(v)+'</b><i style="height:'+Math.max(3,Math.round(v/max*78))+'%"></i><span>'+labels[i]+'</span></div>').join('')+'</div></div>';
+}
+function viewRes(){
+  const ds=S.day, r=dayStats(ds), isToday=ds>=startOfDay(Date.now());
+  const days=[],labs=[];
+  for(let i=6;i>=0;i--){ const d=ds-i*DAY; days.push(dayStats(d)); labs.push(new Date(d+DAY/2).toLocaleDateString('es',{weekday:'narrow'}).toUpperCase()); }
+  const st=(c,i,k,v,s)=>'<div class="stat c-'+c+'"><div class="k">'+ic(i)+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>';
+  const A=analyze();
+  const grp=(t,list)=>list.length?'<div class="sec">'+t+'</div>'+insHTML(list):'';
+  const aiBody=S.ai.busy&&!S.ai.text?'<p class="note">Analizando los últimos 14 días…</p>':(S.ai.text?'<div class="aitext" id="aitext">'+md(S.ai.text)+'</div>':'<p class="note">Claude revisa los últimos 14 días y las medidas de crecimiento, busca patrones y te dice qué comentar con el pediatra.</p>');
+  return '<h2 class="dayh" style="margin-top:4px">Análisis</h2>'
+  +'<div class="card aicard"><h3>Análisis detallado con Claude</h3>'+aiBody+(S.ai.err?'<p class="note" style="color:var(--health)">'+esc(S.ai.err)+'</p>':'')
+  +'<button class="primary mt" data-act="ai"'+(S.ai.busy?' disabled':'')+'>'+(S.ai.busy?'Analizando…':(S.ai.text?'Volver a analizar':'Analizar ahora'))+'</button></div>'
+  +(A.days?'<p class="note">Promedios '+(A.partial?'con lo registrado hoy (día incompleto).':'de los últimos '+A.days+(A.days===1?' día':' días')+' con registros, sin contar hoy.')+'</p>':'<div class="empty mt">Cuando haya registros, aquí aparecerá el análisis de sueño, comida, pañales y salud.</div>')
+  +grp('Sueño',A.sleep)+grp('Alimentación',A.feed)+grp('Pañales',A.diaper)+grp('Salud',A.health)
+  +'<div class="sec">Por día</div>'
+  +'<div class="daynav"><button class="iconbtn" data-act="prevday" aria-label="Día anterior">'+ic('left')+'</button><strong>'+esc(dayLabel(ds))+'</strong><button class="iconbtn" data-act="nextday" aria-label="Día siguiente"'+(isToday?' disabled style="opacity:.35"':'')+'>'+ic('right')+'</button></div>'
+  +'<div class="stats">'
+  +st('sleep','moon','Sueño',fmtH(r.sleepMs),r.sleeps+(r.sleeps===1?' periodo':' periodos'))
+  +st('feed','heart','Pecho',r.breast+(r.breast===1?' toma':' tomas'),r.breast?fmtDur(r.breastMs):'sin pecho')
+  +st('feed','bottle','Biberón',r.ml+' ml',r.bottle+(r.bottle===1?' toma':' tomas'))
+  +st('feed','spoon','Sólidos',String(r.solid),r.solid===1?'comida':'comidas')
+  +st('diaper','drop','Pañales',String(r.diapers),r.pipi+' pipí · '+r.popo+' popó')
+  +st('health','therm','Salud',r.fev!=null?nf(r.fev)+' °C':'—',r.meds+(r.meds===1?' medicina o vacuna':' medicinas o vacunas'))
+  +'</div>'
+  +barChart('Horas de sueño, 7 días',days.map(d=>sleepH(d.sleepMs)),labs,'sleep',v=>nf(v),6)
+  +barChart('Tomas por día',days.map(d=>d.feeds),labs,'feed',v=>String(v),6)
+  +barChart('Biberón (ml) por día',days.map(d=>d.ml),labs,'feed',v=>String(v),6)
+  +barChart('Pañales por día',days.map(d=>d.diapers),labs,'diaper',v=>String(v),6);
+}
+function niceStep(range){ const c=[0.1,0.2,0.5,1,2,5,10,20]; return c.find(s=>range/s<=6)||20; }
+function viewCre(){
+  const sex=S.profile.sex;
+  const find=m=>{ for(let i=S.growth.length-1;i>=0;i--) if(S.growth[i][m]!=null) return S.growth[i]; return null; };
+  const tile=m=>{ const g=find(m); let s=METRICS[m].unit;
+    if(g){ const r=lmsAt(sex,m,ageAt(g.ts)); if(r) s='percentil '+pctText(zOf(g[m],r)); }
+    return '<div class="tile"><div class="k">'+METRICS[m].label+'</div><div class="v">'+(g?nf(g[m],2)+' '+METRICS[m].unit:'—')+'</div><div class="s">'+(g?s:'sin medidas')+'</div></div>'; };
+  const card=m=>S.growth.some(g=>g[m]!=null)?'<div class="card"><h3>Curva de '+(m==='kg'?'peso':(m==='cm'?'talla':'perímetro de la cabeza'))+'</h3>'+growthChart(m)+insHTML(growthInsights(m))+'</div>':'';
+  const any=S.growth.length;
+  return '<h2 class="dayh" style="margin-top:4px">Crecimiento</h2>'
+  +'<div class="status">'+tile('kg')+tile('cm')+tile('head')+'</div>'
+  +'<button class="primary" data-act="addgrowth">Agregar medida</button>'
+  +(any?card('kg')+card('cm')+card('head'):'<div class="empty mt">Guarda el peso y la talla de cada control para ver sus curvas y el análisis.</div>')
+  +(!S.profile.birth||!LMS[sex]?'<p class="note">Agrega la fecha de nacimiento y si es niño o niña en el engranaje para comparar con la OMS.</p>':'')
+  +'<p class="note">Curvas: estándares de crecimiento de la OMS (0 a 24 meses). La franja oscura va del percentil 15 al 85; la clara, del 3 al 97. Es una guía y no reemplaza la valoración del pediatra.</p>'
+  +'<div class="sec">Medidas guardadas</div>'
+  +(any?'<div class="list growthlist">'+S.growth.slice().reverse().map(g=>{
+      const parts=['kg','cm','head'].filter(m=>g[m]!=null).map(m=>METRICS[m].label+' '+nf(g[m],2)+' '+METRICS[m].unit).join(' · ');
+      return '<div class="row"><button class="rowmain" data-editg="'+esc(g.id)+'"><span class="dot">'+ic('ruler')+'</span><span class="tx"><div class="t">'+esc(new Date(g.ts).toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'}))+'</div><div class="s">'+esc(parts)+'</div></span></button>'+delBtn('delg',g.id)+'</div>'; }).join('')+'</div>'
+    :'<div class="empty">Aún no hay medidas.</div>');
+}
+
+function render(){
+  const p=S.profile, titles={hoy:'hoy',hist:'hist',res:'res',cre:'cre'};
+  let banner='';
+  if(S.local) banner='<div class="banner">Por ahora los registros se guardan solo en este celular. La sincronización entre celulares y las notificaciones se activan en el siguiente paso.</div>';
+  else if(S.readonly) banner='<div class="banner">Solo puedes ver los registros. Pide que te compartan la app como colaborador para poder anotar.</div>';
+  else if(S.slow) banner='<div class="banner">No se puede conectar todavía. Lo que ves puede estar desactualizado.</div>';
+  const view={hoy:viewHoy,hist:viewHist,res:viewRes,cre:viewCre}[S.tab]();
+  const nav=[['hoy','home','Hoy'],['hist','list','Historial'],['res','bars','Análisis'],['cre','grow','Crecimiento']];
+  $('#app').innerHTML='<div class="top"><div><h1>'+esc(p.name||'Luciano')+'</h1><div class="age">'+esc(ageText())+'</div>'+(S.db&&S.synced&&!S.slow?'<div class="live"><i></i>En vivo con los otros celulares</div>':'')+'</div><div class="hbtns">'+(function(){ const u=S.undo[S.undo.length-1]; return '<button class="iconbtn undobtn'+(u?'':' off')+'" data-act="undo" aria-label="'+esc(u?'Deshacer: '+u.label:'Nada para deshacer')+'"'+(u?'':' aria-disabled="true"')+'>'+ic('undo')+(S.undo.length?'<span class="badge">'+S.undo.length+'</span>':'')+'</button>'; })()+'<button class="iconbtn" data-act="skins" aria-label="Cambiar apariencia">'+ic('palette')+'</button><button class="iconbtn" data-act="settings" aria-label="Datos del bebé">'+ic('gear')+'</button></div></div>'
+   +banner+view
+   +'<nav class="nav" aria-label="Secciones"><div>'+nav.map(n=>'<button data-tab="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[1])+n[2]+'</button>').join('')+'</div></nav>';
+  tick();
+}
+function tick(){
+  const now=Date.now();
+  document.querySelectorAll('.tick').forEach(el=>{
+    const ms=now-Number(el.dataset.ts), m=el.dataset.m;
+    el.textContent=m==='clock'?fmtClock(ms):(m==='since'?'hace '+fmtDur(ms):fmtDur(ms));
+  });
+}
+setInterval(tick,1000);
+
+/* ---------- aviso con deshacer ---------- */
+let toastTimer=null;
+function pushUndo(label,fn){
+  S.undo.push({label,fn}); if(S.undo.length>30) S.undo.shift(); render();
+}
+let undoing=false;
+async function undoLast(){
+  if(undoing) return;
+  const u=S.undo.pop();
+  if(!u){ toast('No hay nada para deshacer'); render(); return; }
+  undoing=true;
+  try{ await u.fn(); toast('Deshecho: '+u.label); }
+  catch(e){ S.undo.push(u); }
+  finally{ undoing=false; render(); }
+}
+function toast(msg,undo){
+  const root=$('#toastroot'); clearTimeout(toastTimer);
+  root.innerHTML='<div class="toast" role="status"><span>'+esc(msg)+'</span>'+(undo?'<button type="button" data-undo="1">Deshacer</button>':'')+'</div>';
+  if(typeof undo==='function') pushUndo(msg,undo);
+  toastTimer=setTimeout(()=>{ root.innerHTML=''; },undo?6000:3500);
+}
+
+/* ---------- eventos de la interfaz ---------- */
+document.addEventListener('click',async ev=>{
+  const t=ev.target.closest('button'); if(!t) return;
+  if(t.dataset.undo){ $('#toastroot').innerHTML=''; await undoLast(); return; }
+  if(t.dataset.animtoggle){ setAnim(!S.anim); t.setAttribute('aria-checked',S.anim); t.querySelector('.switch').classList.toggle('on',S.anim); return; }
+  if(t.dataset.skinpick){ setSkin(t.dataset.skinpick); document.querySelectorAll('.skinbtn').forEach(b=>{ const on=b===t; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); }); return; }
+  if(t.dataset.delev||t.dataset.delg){
+    if(!t.classList.contains('armed')){
+      document.querySelectorAll('.rowdel.armed').forEach(b=>{ b.classList.remove('armed'); b.innerHTML=ic('trash'); });
+      t.classList.add('armed'); t.textContent='¿Borrar?';
+      setTimeout(()=>{ if(t.isConnected&&t.classList.contains('armed')){ t.classList.remove('armed'); t.innerHTML=ic('trash'); } },3500);
+      return;
+    }
+    const isG=!!t.dataset.delg, coll=isG?'growth':'events', id=isG?t.dataset.delg:t.dataset.delev;
+    const rec=(isG?S.growth:S.events).find(x=>x.id===id); if(!rec) return;
+    const copy=JSON.parse(JSON.stringify(rec)); delete copy.id;
+    try{ await remove(coll,id); toast('Registro borrado',()=>write(coll,id,copy)); }catch(e){}
+    return;
+  }
+  if(t.dataset.tab){ S.tab=t.dataset.tab; render(); window.scrollTo(0,0); return; }
+  if(t.dataset.gm){ S.gm=t.dataset.gm; render(); return; }
+  if(t.dataset.edit){ const e=S.events.find(x=>x.id===t.dataset.edit); if(e) eventSheet(e.type,e); return; }
+  if(t.dataset.editg){ const g=S.growth.find(x=>x.id===t.dataset.editg); if(g) growthSheet(g); return; }
+  if(t.dataset.close){ closeSheet(); return; }
+  if(t.dataset.fill){ const el=document.getElementById(t.dataset.fill); if(el){ el.value=t.dataset.v; } return; }
+  if(t.closest('[data-seg]')&&t.dataset.v!==undefined){ t.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===t)); return; }
+  if(t.dataset.del&&S.sheet&&S.sheet.onDelete){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Toca de nuevo para eliminar'; return; } try{ if(await S.sheet.onDelete()) closeSheet(); }catch(e){} return; }
+  const a=t.dataset.act; if(!a) return;
+  if(a==='sleep') toggleSleep();
+  else if(a==='breast') toggleBreast(t.dataset.side);
+  else if(a==='diaper') quickDiaper(t.dataset.kind);
+  else if(a==='bottle'||a==='solid'||a==='med'||a==='fever'||a==='vaccine') eventSheet(a,null);
+  else if(a==='addgrowth') growthSheet(null);
+  else if(a==='undo') undoLast();
+  else if(a==='ai') runAI();
+  else if(a==='settings') profileSheet();
+  else if(a==='skins') openSheet({title:'Apariencia',noFocus:true,noCancel:true,fields:[{t:'skins'}],saveLabel:'Listo',onSave:async()=>true});
+  else if(a==='prevday'){ S.day-=DAY; render(); }
+  else if(a==='nextday'){ if(S.day<startOfDay(Date.now())){ S.day+=DAY; render(); } }
+});
+document.addEventListener('submit',async ev=>{
+  if(ev.target.id!=='sheetform') return; ev.preventDefault();
+  if(!S.sheet) return; const btn=ev.target.querySelector('.primary'); btn.disabled=true;
+  try{ if(await S.sheet.onSave()) closeSheet(); }catch(e){} finally{ btn.disabled=false; }
+});
+document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&S.sheet) closeSheet(); });
+document.addEventListener('mousedown',ev=>{ if(ev.target.id==='back') closeSheet(); });
+
+
+/* ---------- animación de inicio: solo al abrir, no al volver de otra app ---------- */
+(function(){
+  const sp=document.getElementById('splash'); if(!sp) return;
+  let hid=null; try{ hid=Number(sessionStorage.getItem('diario-oculto')||0); }catch(e){}
+  if(document.wasDiscarded||(hid&&Date.now()-hid<30*60000)){ sp.remove(); return; }
+
+  const HEART='M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z';
+  const STAR='M0-7L1.8-1.8 7 0 1.8 1.8 0 7-1.8 1.8-7 0-1.8-1.8z';
+  const burst=(()=>{ const p=[]; for(let i=0;i<32;i++){ const r=i%2?50:76, a=i*Math.PI/16; p.push((Math.cos(a)*r).toFixed(1)+','+(Math.sin(a)*r).toFixed(1)); } return p.join(' '); })();
+  const at=(x,y,inner)=>'<g transform="translate('+x+' '+y+')">'+inner+'</g>';
+  const SCENES={
+    noche:'<svg class="scv" viewBox="0 0 160 160">'+at(80,82,'<circle class="n-halo" r="56"/>')
+      +'<path class="n-moon" d="M92 34a48 48 0 1 0 40 74A40 40 0 0 1 92 34z"/>'
+      +[[28,32,.5],[136,28,.7],[140,94,.9],[22,108,1.1],[56,16,1.3],[110,136,1.5]].map(([x,y,d])=>at(x,y,'<path class="n-st" style="--d:'+d+'s" d="'+STAR+'"/>')).join('')
+      +'<text class="n-z" x="112" y="64" style="--d:1s">z</text><text class="n-z" x="122" y="50" style="--d:1.3s;font-size:17px">z</text><text class="n-z" x="134" y="34" style="--d:1.6s;font-size:22px">Z</text></svg>',
+    algodon:'<svg class="scv" viewBox="0 0 160 160">'
+      +[['#BFF0DF',96,96,.15],['#D8C9FF',62,90,.35],['#FFC7DE',80,104,.55]].map(([c,x,y,d])=>at(x,y,'<g class="a-cl" style="--d:'+d+'s;fill:'+c+'"><circle cx="-24" cy="4" r="20"/><circle cx="0" cy="-8" r="28"/><circle cx="26" cy="2" r="22"/><rect x="-42" y="0" width="86" height="24" rx="12"/></g>')).join('')
+      +at(80,60,'<g class="a-heart"><path transform="scale(1.6) translate(-12 -12)" d="'+HEART+'" fill="#E0559A"/><circle cx="-9" cy="-8" r="3.5" fill="#fff" opacity=".7"/></g>')
+      +[[30,128,.9],[128,130,1.2],[52,140,1.5],[110,146,1.8]].map(([x,y,d])=>'<circle class="a-bub" cx="'+x+'" cy="'+y+'" r="5" style="--d:'+d+'s"/>').join('')+'</svg>',
+    oceano:'<svg class="scv" viewBox="0 0 160 160"><defs><clipPath id="spc"><circle cx="80" cy="80" r="70"/></clipPath><linearGradient id="spsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9EE3EC"/><stop offset="1" stop-color="#F0FBF8"/></linearGradient></defs>'
+      +'<g clip-path="url(#spc)"><rect width="160" height="160" fill="url(#spsky)"/>'
+      +'<g class="o-sun">'+at(80,74,'<g class="o-ray">'+[0,45,90,135,180,225,270,315].map(a=>'<line x1="0" y1="-28" x2="0" y2="-36" transform="rotate('+a+')"/>').join('')+'</g><circle r="20"/>')+'</g>'
+      +'<g class="o-wr" style="--d:.5s"><g class="o-ws"><path d="M-160 94 Q-150 86 -140 94 T-120 94 T-100 94 T-80 94 T-60 94 T-40 94 T-20 94 T0 94 T20 94 T40 94 T60 94 T80 94 T100 94 T120 94 T140 94 T160 94 T180 94 T200 94 T220 94 T240 94 V170 H-160Z" fill="#0A8FA6" opacity=".6"/></g></g>'
+      +'<g class="o-wr" style="--d:.75s"><g class="o-ws" style="animation-duration:2.2s;animation-direction:reverse"><path d="M-160 108 Q-150 100 -140 108 T-120 108 T-100 108 T-80 108 T-60 108 T-40 108 T-20 108 T0 108 T20 108 T40 108 T60 108 T80 108 T100 108 T120 108 T140 108 T160 108 T180 108 T200 108 T220 108 T240 108 V170 H-160Z" fill="#11977A" opacity=".7"/></g></g>'
+      +[[58,140,1],[96,146,1.3],[74,150,1.6],[112,138,1.9]].map(([x,y,d])=>'<circle class="o-b" cx="'+x+'" cy="'+y+'" r="4" style="--d:'+d+'s"/>').join('')
+      +'</g><circle cx="80" cy="80" r="70" fill="none" stroke="#fff" stroke-width="5"/></svg>',
+    selva:'<svg class="scv" viewBox="0 0 160 160">'+at(80,80,'<circle class="s-pot" r="68" fill="#FFFBF1" stroke="#E2D6B8" stroke-width="2"/>')
+      +'<path d="M44 128 Q80 118 116 128" stroke="#9B7A45" stroke-width="5" fill="none" stroke-linecap="round"/>'
+      +'<path class="s-stem" pathLength="100" d="M80 126 C80 108 75 92 81 76 C86 62 80 52 80 44" stroke="#2F6B3A" stroke-width="5" fill="none" stroke-linecap="round"/>'
+      +at(80,108,'<path class="s-leaf" style="--d:.8s" d="M0 0C-8-16-30-18-38-6-28 4-12 6 0 0Z" fill="#3E8E4E"/>')
+      +at(82,88,'<path class="s-leaf" style="--d:1s" d="M0 0C8-16 30-18 38-6 28 4 12 6 0 0Z" fill="#5FA052"/>')
+      +at(81,66,'<path class="s-leaf" style="--d:1.2s" d="M0 0C-6-12-22-14-28-5-21 3-9 4 0 0Z" fill="#8BB174"/>')
+      +at(80,42,'<g class="s-bud"><path transform="scale(1.05) translate(-12 -14)" d="'+HEART+'" fill="#C2453A"/></g>')+'</svg>',
+    retro:'<svg class="scv" viewBox="0 0 160 160">'+at(80,80,'<g class="r-burst"><polygon points="'+burst+'" fill="#FFE14D" stroke="#111" stroke-width="3" stroke-linejoin="round"/></g>')
+      +at(26,30,'<g class="r-sh" style="--d:.3s;--fx:-120px;--fy:-80px"><rect x="-14" y="-14" width="28" height="28" fill="#2EC4F1" stroke="#111" stroke-width="3" transform="rotate(12)"/></g>')
+      +at(136,34,'<g class="r-sh" style="--d:.45s;--fx:120px;--fy:-90px"><circle r="15" fill="#14C38E" stroke="#111" stroke-width="3"/></g>')
+      +at(138,128,'<g class="r-sh" style="--d:.6s;--fx:110px;--fy:90px"><path d="M0-17L16 12H-16Z" fill="#FF9F1C" stroke="#111" stroke-width="3" stroke-linejoin="round"/></g>')
+      +at(22,126,'<g class="r-sh" style="--d:.75s;--fx:-110px;--fy:90px"><rect x="-18" y="-8" width="36" height="16" rx="8" fill="#8C74FF" stroke="#111" stroke-width="3"/></g>')
+      +at(80,82,'<g class="r-heart"><path transform="translate(5 5) scale(2.1) translate(-12 -12)" d="'+HEART+'" fill="#111"/><path transform="scale(2.1) translate(-12 -12)" d="'+HEART+'" fill="#FF4F7B" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></g>')+'</svg>'
+  };
+  let sk='clasico'; try{ sk=localStorage.getItem('diario-bebe-skin')||'clasico'; }catch(e){}
+  if(SCENES[sk]){
+    sp.classList.add('sk-'+sk);
+    const g=sp.querySelector('.sp-glow'); if(g) g.className='sp-bg';
+    sp.querySelector('.sp-logo').innerHTML=SCENES[sk];
+  }
+  let name='Luciano'; try{ name=localStorage.getItem('diario-bebe-nombre')||name; }catch(e){}
+  const h=document.getElementById('sp-name'); h.textContent='';
+  [...name].forEach((ch,i)=>{ const sEl=document.createElement('span'); sEl.textContent=ch===' '?' ':ch; sEl.style.animationDelay=(0.45+i*0.07)+'s'; h.appendChild(sEl); });
+  const close=()=>{
+    if(!sp.isConnected||sp.dataset.closing) return; sp.dataset.closing='1';
+    if(document.documentElement.classList.contains('noanim')){ sp.remove(); return; }
+    sp.querySelectorAll('.sp-name span').forEach((x,i)=>{ x.style.animationDelay=(i*0.035)+'s'; });
+    sp.classList.add('out');
+    setTimeout(()=>{ sp.classList.add('reveal'); try{ render(); }catch(e){} },320);
+    setTimeout(()=>sp.remove(),900);
+  };
+  setTimeout(close,2100);
+  sp.addEventListener('click',close);
+})();
+let saliendo=false;
+const marcarSalida=()=>{ saliendo=true; try{ sessionStorage.removeItem('diario-oculto'); }catch(e){} };
+window.addEventListener('beforeunload',marcarSalida);
+window.addEventListener('pagehide',marcarSalida);
+document.addEventListener('visibilitychange',()=>{ try{
+  if(document.hidden){ if(!saliendo) sessionStorage.setItem('diario-oculto',String(Date.now())); }
+  else sessionStorage.removeItem('diario-oculto');
+}catch(e){} });
+
+/* ---------- jalar hacia abajo para actualizar ---------- */
+async function refreshAll(){
+  if(S.db){
+    const t=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+    const [ev,gr,pr]=await Promise.race([Promise.all([
+      S.db.collection('events').orderBy('ts','desc').limit(1000).get(),
+      S.db.collection('growth').orderBy('ts','asc').limit(500).get(),
+      S.db.doc('meta/profile').get()]),t]);
+    S.events=ev.docs.map(snapData); S.growth=gr.docs.map(snapData); S.profile=pr.exists?pr.data():{};
+    S.slow=false; S.synced=true; resolveNames();
+  } else { loadLocal(); sortAll(); }
+  render();
+}
+(function(){
+  const el=document.getElementById('ptr'), TH=75, MAX=120;
+  let y0=null, dy=0, busy=false;
+  const set=(d,o)=>{ el.style.transform='translateY('+(d-50)+'px)'; el.style.opacity=o; el.querySelector('svg').style.transform=busy?'':'rotate('+(d*3)+'deg)'; };
+  document.addEventListener('touchstart',e=>{
+    if(busy||S.sheet||window.scrollY>0||e.touches.length!==1){ y0=null; return; }
+    y0=e.touches[0].clientY; dy=0; el.classList.remove('anim');
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(y0==null) return;
+    const d=e.touches[0].clientY-y0;
+    if(d<=0||window.scrollY>0){ dy=0; set(0,0); return; }
+    dy=Math.min(MAX,d*0.5); set(dy,Math.min(1,dy/TH));
+    if(e.cancelable) e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchend',async()=>{
+    if(y0==null) return; y0=null; el.classList.add('anim');
+    if(dy<TH){ set(0,0); return; }
+    busy=true; el.classList.add('spin'); set(70,1);
+    try{ await refreshAll(); if(navigator.vibrate) try{navigator.vibrate(15);}catch(e){} toast('Actualizado'); }
+    catch(e){ toast('No se pudo actualizar. Revisa la conexión.'); }
+    finally{ busy=false; el.classList.remove('spin'); set(0,0); }
+  });
+})();
+
+if(typeof claude==='undefined') document.documentElement.classList.add('noclaude');
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+init();
+})();
+</script>
+</body>
+</html>
