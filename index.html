@@ -133,6 +133,27 @@ h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
 .mt{margin-top:12px}
 .noclaude .aicard{display:none}
 .hbtns{display:flex;gap:8px}
+.cback{position:fixed;inset:0;z-index:40;background:rgba(8,12,20,.55);display:grid;place-items:center;padding:20px}
+.cbox{width:100%;max-width:360px;background:var(--bg);color:var(--ink);border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:up .2s ease}
+.cbox h3{font-family:var(--font-display);font-size:20px;margin:0 0 8px}
+.cbox p{margin:0 0 16px;color:var(--muted);line-height:1.45}
+.cacts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cacts button{min-height:50px}
+.dangerfill{width:100%;border:0;border-radius:16px;background:var(--health);color:#fff;font-weight:700;min-height:54px;font-size:16px}
+.dangerfill:disabled{opacity:.45}
+.kpd{display:flex;gap:6px;flex-wrap:wrap}
+.kf{flex:1 1 56px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:14px;border:2px solid var(--line);background:var(--surface);min-height:62px}
+.kf small{font-size:11.5px;color:var(--muted);font-weight:700}
+.kf b{font-family:var(--font-display);font-size:24px;font-variant-numeric:tabular-nums}
+.kf.on{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kp button{min-height:56px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.kp button:active{transform:scale(.96);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.kp .kpnext{font-size:15px;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.kphint{margin:0;font-size:14px;color:var(--muted);line-height:1.4}
+.kphint.bad{color:var(--health);font-weight:600}
+.rzsum{display:flex;flex-direction:column;gap:3px}
+.rzsum span{font-size:13px;color:var(--muted)}
 html,body{overscroll-behavior-y:contain}
 #ptr{position:fixed;left:50%;top:0;z-index:15;width:42px;height:42px;margin-left:-21px;border-radius:50%;background:var(--bg);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.18);display:grid;place-items:center;transform:translateY(-60px);opacity:0;pointer-events:none}
 #ptr svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -218,7 +239,7 @@ html[data-skin] body{background:transparent}
 /* ===== Skin: Retro pop ===== */
 :root[data-skin="retro"]{--bg:#FFF4D6;--surface:#FFFFFF;--ink:#111111;--muted:#444444;--line:#111111;--accent:#FF4F7B;--accent-ink:#111;--sleep:#8C74FF;--feed:#FF9F1C;--diaper:#14C38E;--health:#FF4F4F;--grow:#2EC4F1;--font-display:'Archivo Black',sans-serif;color-scheme:light}
 [data-skin="retro"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(rgba(17,17,17,.13) 1.2px,transparent 1.6px) 0 0/16px 16px,#FFF4D6}
-[data-skin="retro"] :is(.tile,.row,.stat,.card,.iconbtn,.seg button,.pill,.chips button,.ghost,.danger,.fld input){border:2.5px solid #111;box-shadow:4px 4px 0 #111;border-radius:10px}
+[data-skin="retro"] :is(.tile,.row,.stat,.card,.iconbtn,.seg button,.pill,.chips button,.ghost,.danger,.fld input,.kf,.kp button,.cbox,.dangerfill){border:2.5px solid #111;box-shadow:4px 4px 0 #111;border-radius:10px}
 [data-skin="retro"] .act{border:2.5px solid #111;border-radius:12px;box-shadow:4px 4px 0 #111;background:color-mix(in srgb,var(--c) 32%,#fff)}
 [data-skin="retro"] .act.on{background:var(--c);color:#111;animation:none}
 [data-skin="retro"] .act .ic,[data-skin="retro"] .act.on .ic,[data-skin="retro"] .act.on small{color:#111}
@@ -529,6 +550,7 @@ html.noanim .top h1{-webkit-text-fill-color:currentColor;background:none}
 <div id="app"></div>
 <div id="sheetroot"></div>
 <div id="toastroot"></div>
+<div id="confirmroot"></div>
 <div id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg></div>
 <script>
 (function(){
@@ -799,7 +821,7 @@ function fld(f){
 }
 function openSheet(cfg){
   S.sheet=cfg;
-  $('#sheetroot').innerHTML='<div class="back" id="back"><form class="sheet" id="sheetform" role="dialog" aria-modal="true" aria-label="'+esc(cfg.title)+'"><h2>'+esc(cfg.title)+'</h2>'+cfg.fields.map(fld).join('')+'<div class="acts"><button class="primary" type="submit">'+(cfg.saveLabel||'Guardar')+'</button>'+(cfg.noCancel?'':'<button class="ghost" type="button" data-close="1">Cancelar</button>')+(cfg.onDelete?'<button class="danger" type="button" data-del="1">Eliminar</button>':'')+'</div></form></div>';
+  $('#sheetroot').innerHTML='<div class="back" id="back"><form class="sheet" id="sheetform" role="dialog" aria-modal="true" aria-label="'+esc(cfg.title)+'"><h2>'+esc(cfg.title)+'</h2>'+cfg.fields.map(fld).join('')+'<div class="acts"><button class="primary" type="submit">'+(cfg.saveLabel||'Guardar')+'</button>'+(cfg.noCancel?'':'<button class="ghost" type="button" data-close="1">Cancelar</button>')+(cfg.onDelete?'<button class="danger" type="button" data-del="1">Eliminar</button>':'')+(cfg.extra||'')+'</div></form></div>';
   const first=$('#sheetform input'); if(first&&!cfg.noFocus) setTimeout(()=>first.focus({preventScroll:true}),50);
 }
 function closeSheet(){ S.sheet=null; $('#sheetroot').innerHTML=''; }
@@ -888,7 +910,115 @@ function profileSheet(){
     {t:'text',id:'name',l:'Nombre',v:p.name||'',ph:'Nombre del bebé'},
     {t:'date',id:'birth',l:'Fecha de nacimiento',v:p.birth||''},
     {t:'seg',id:'sex',l:'Para comparar con las curvas de la OMS',v:p.sex||'',o:[['nino','Niño'],['nina','Niña'],['','Sin comparar']]}],
+    extra:'<button class="danger" type="button" data-act="reset">Borrar datos…</button>',
     onSave:async()=>{ const prev=JSON.parse(JSON.stringify(S.profile||{})); await saveProfile({name:val('name'),birth:val('birth'),sex:val('sex')}); toast('Datos del bebé guardados',()=>saveProfile(prev)); return true; }});
+}
+
+/* ---------- confirmación para todo borrado ---------- */
+function confirmBox(o){
+  return new Promise(res=>{
+    const root=document.getElementById('confirmroot');
+    root.innerHTML='<div class="cback"><div class="cbox" role="alertdialog" aria-modal="true" aria-labelledby="cbt" aria-describedby="cbm"><h3 id="cbt">'+esc(o.title)+'</h3><p id="cbm">'+esc(o.msg)+'</p><div class="cacts"><button type="button" class="ghost" data-cno="1">'+esc(o.cancel||'Cancelar')+'</button><button type="button" class="'+(o.danger?'dangerfill':'primary')+'" data-cyes="1">'+esc(o.ok||'Sí')+'</button></div></div></div>';
+    const done=v=>{ root.innerHTML=''; document.removeEventListener('click',h,true); document.removeEventListener('keydown',k,true); res(v); };
+    const h=e=>{ const b=e.target.closest('[data-cyes],[data-cno]');
+      if(b){ e.stopPropagation(); e.preventDefault(); done(!!b.dataset.cyes); }
+      else if(e.target.classList&&e.target.classList.contains('cback')){ e.stopPropagation(); e.preventDefault(); done(false); }
+      else if(e.target.closest('.cbox')){ e.stopPropagation(); } };
+    const k=e=>{ if(e.key==='Escape'){ e.stopPropagation(); done(false); } };
+    document.addEventListener('click',h,true); document.addEventListener('keydown',k,true);
+    setTimeout(()=>{ const b=root.querySelector('[data-cno]'); if(b) b.focus(); },30);
+  });
+}
+function recLabel(c,r){
+  return c==='growth' ? 'Medida del '+new Date(r.ts).toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'})
+    : evInfo(r).t+' · '+dayLabel(r.ts)+', '+hm(r.ts);
+}
+
+/* ---------- borrar datos: todo o desde un momento hacia atrás ---------- */
+const pad2=n=>String(n).padStart(2,'0');
+const RZ_F=[['d','Día',2],['m','Mes',2],['y','Año',4],['h','Hora',2],['mi','Min',2]];
+const RZ_A=[['d','Días',3],['h','Horas',2],['m','Minutos',3]];
+function openReset(){
+  const n=new Date();
+  S.rz={mode:'before',how:'atras',f:{d:pad2(n.getDate()),m:pad2(n.getMonth()+1),y:String(n.getFullYear()),h:pad2(n.getHours()),mi:pad2(n.getMinutes())},
+        a:{d:'',h:'',m:''},act:'h',fresh:true,ev:true,gr:true,all:false};
+  S.sheet={rz:true}; renderRZ();
+}
+function rzInstant(){
+  const r=S.rz; if(r.mode==='all') return Infinity;
+  if(r.how==='fecha'){
+    const f=r.f, d=new Date(+f.y,+f.m-1,+f.d,+f.h,+f.mi);
+    if(f.y.length!==4||!f.d||!f.m||f.h===''||f.mi===''||isNaN(d)||d.getDate()!==+f.d||d.getMonth()!==+f.m-1||+f.h>23||+f.mi>59) return null;
+    return d.getTime();
+  }
+  const a=r.a; return Date.now()-(((+a.d||0)*24+(+a.h||0))*60+(+a.m||0))*60000;
+}
+function rzTargets(){
+  const t=rzInstant(); if(t==null) return null;
+  const ev=S.rz.ev?S.events.filter(e=>e.ts<=t).map(r=>({c:'events',r})):[];
+  const gr=S.rz.gr?S.growth.filter(g=>g.ts<=t).map(r=>({c:'growth',r})):[];
+  return ev.concat(gr).sort((a,b)=>b.r.ts-a.r.ts);
+}
+function rzRow(x){
+  const f=x.c==='growth'?{i:'ruler',c:'grow',t:'Peso y talla',s:new Date(x.r.ts).toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'})}:evInfo(x.r);
+  return '<div class="row c-'+f.c+'"><div class="rowmain" style="cursor:default"><span class="dot">'+ic(f.i)+'</span><span class="tx"><div class="t">'+esc(f.t)+'</div><div class="s">'+esc(x.c==='growth'?f.s:f.s+' · '+dayLabel(x.r.ts)+', '+hm(x.r.ts))+'</div></span></div>'
+    +'<button class="rowdel" data-'+(x.c==='growth'?'delg':'delev')+'="'+esc(x.r.id)+'" aria-label="Borrar este registro">'+ic('trash')+'</button></div>';
+}
+function renderRZ(){
+  if(!S.sheet||!S.sheet.rz) return;
+  const r=S.rz, inst=rzInstant(), list=rzTargets();
+  const seg=(attr,cur,opts)=>'<div class="seg" role="group">'+opts.map(([v,l])=>'<button type="button" data-'+attr+'="'+v+'" class="'+(v===cur?'on':'')+'" aria-pressed="'+(v===cur)+'">'+l+'</button>').join('')+'</div>';
+  let h='<h2>Borrar datos</h2>'
+   +'<div class="fld"><label>¿Qué quieres borrar?</label>'+seg('rzmode',r.mode,[['before','Desde un momento hacia atrás'],['all','Todo']])+'</div>';
+  if(r.mode==='before'){
+    const fs=r.how==='fecha'?RZ_F:RZ_A, obj=r.how==='fecha'?r.f:r.a;
+    h+='<div class="fld"><label>Elige el momento</label>'+seg('rzhow',r.how,[['atras','Hace cierto tiempo'],['fecha','Día y hora exactos']])+'</div>'
+     +'<div class="kpd">'+fs.map(([id,l])=>'<button type="button" class="kf'+(r.act===id?' on':'')+'" data-kf="'+id+'"><small>'+l+'</small><b>'+(obj[id]||'0')+'</b></button>').join('')+'</div>';
+    let hint;
+    if(inst==null) hint='Revisa la fecha: ese día u hora no existe.';
+    else if(inst>=Date.now()-30000) hint='Desde ahora hacia atrás: se borraría todo lo registrado hasta este momento.';
+    else hint='Se borra todo lo registrado el '+new Date(inst).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})+' a las '+hm(inst)+' y antes. Lo más reciente se conserva.';
+    h+='<p class="kphint'+(inst==null?' bad':'')+'">'+esc(hint)+'</p>'
+     +'<div class="kp" role="group" aria-label="Teclado numérico">'+['1','2','3','4','5','6','7','8','9'].map(n=>'<button type="button" data-kp="'+n+'">'+n+'</button>').join('')
+     +'<button type="button" data-kp="back" aria-label="Borrar dígito">⌫</button><button type="button" data-kp="0">0</button><button type="button" data-kp="next" class="kpnext">Siguiente</button></div>';
+  } else {
+    h+='<p class="kphint bad">Se borrará todo lo marcado abajo, en todos los celulares. Los datos del bebé (nombre y fecha de nacimiento) se conservan.</p>';
+  }
+  h+='<div class="fld"><label>Incluir</label><div class="seg">'
+    +'<button type="button" data-rzt="ev" class="'+(r.ev?'on':'')+'" aria-pressed="'+r.ev+'">'+(r.ev?'✓ ':'')+'Registros del día a día</button>'
+    +'<button type="button" data-rzt="gr" class="'+(r.gr?'on':'')+'" aria-pressed="'+r.gr+'">'+(r.gr?'✓ ':'')+'Medidas de crecimiento</button></div></div>';
+  const n=list?list.length:0;
+  h+='<div class="rzsum"><b>'+(list==null?'—':n===0?'No hay nada que borrar con esta selección':n+(n===1?' registro':' registros')+' se borrarían')+'</b>'+(n?'<span>Puedes quitarlos uno por uno con el bote de basura, o todos juntos con el botón rojo.</span>':'')+'</div>';
+  if(n){ const show=r.all?list:list.slice(0,25);
+    h+='<div class="list">'+show.map(rzRow).join('')+'</div>'+(n>show.length?'<button type="button" class="ghost" data-rzall="1">Ver los '+n+'</button>':''); }
+  h+='<div class="acts"><button type="button" class="dangerfill" data-rzgo="1"'+(n?'':' disabled')+'>'+(n?'Borrar '+(n===1?'este registro':'estos '+n+' registros'):'Nada para borrar')+'</button><button type="button" class="ghost" data-close="1">Cerrar</button></div>';
+  const root=document.getElementById('sheetroot');
+  const prevScroll=root.querySelector('.sheet')?root.querySelector('.sheet').scrollTop:0;
+  root.innerHTML='<div class="back" id="back"><div class="sheet" role="dialog" aria-modal="true" aria-label="Borrar datos">'+h+'</div></div>';
+  root.querySelector('.sheet').scrollTop=prevScroll;
+}
+function rzKey(k){
+  const r=S.rz, fs=r.how==='fecha'?RZ_F:RZ_A, obj=r.how==='fecha'?r.f:r.a;
+  const i=fs.findIndex(x=>x[0]===r.act), id=fs[i][0], max=fs[i][2];
+  if(k==='back'){ obj[id]=r.fresh?'':obj[id].slice(0,-1); r.fresh=false; }
+  else if(k==='next'){ r.act=fs[(i+1)%fs.length][0]; r.fresh=true; }
+  else { obj[id]=((r.fresh?'':obj[id])+k).slice(-max); r.fresh=false; if(obj[id].length>=max&&i<fs.length-1){ r.act=fs[i+1][0]; r.fresh=true; } }
+  renderRZ();
+}
+async function bulkDelete(list,label){
+  if(S.readonly){ toast('Solo tienes permiso de lectura.'); return; }
+  const copies=list.map(x=>{ const d=JSON.parse(JSON.stringify(x.r)); delete d.id; return {c:x.c,id:x.r.id,d}; });
+  const run=async fn=>{ for(let i=0;i<copies.length;i+=8) await Promise.all(copies.slice(i,i+8).map(fn)); };
+  try{
+    if(S.db) await run(x=>S.db.collection(x.c).doc(x.id).delete());
+    else { const ids=new Set(copies.map(x=>x.c+'/'+x.id)); S.events=S.events.filter(e=>!ids.has('events/'+e.id)); S.growth=S.growth.filter(g=>!ids.has('growth/'+g.id)); saveLocal(); }
+  }catch(e){ toast('No se pudo borrar todo. Revisa la conexión e intenta de nuevo.'); render(); return; }
+  toast(label,async()=>{
+    if(S.db) await run(x=>S.db.collection(x.c).doc(x.id).set(x.d));
+    else { copies.forEach(x=>(x.c==='events'?S.events:S.growth).push(Object.assign({id:x.id},x.d))); sortAll(); saveLocal(); }
+    render();
+  });
+  render();
 }
 
 /* ---------- estadísticas ---------- */
@@ -1306,6 +1436,7 @@ function render(){
    +banner+view
    +'<nav class="nav" aria-label="Secciones"><div>'+nav.map(n=>'<button data-tab="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[1])+n[2]+'</button>').join('')+'</div></nav>';
   tick();
+  if(S.sheet&&S.sheet.rz) renderRZ();
 }
 function tick(){
   const now=Date.now();
@@ -1345,17 +1476,12 @@ document.addEventListener('click',async ev=>{
   if(t.dataset.animtoggle){ setAnim(!S.anim); t.setAttribute('aria-checked',S.anim); t.querySelector('.switch').classList.toggle('on',S.anim); return; }
   if(t.dataset.skinpick){ setSkin(t.dataset.skinpick); document.querySelectorAll('.skinbtn').forEach(b=>{ const on=b===t; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); }); return; }
   if(t.dataset.delev||t.dataset.delg){
-    if(!t.classList.contains('armed')){
-      document.querySelectorAll('.rowdel.armed').forEach(b=>{ b.classList.remove('armed'); b.innerHTML=ic('trash'); });
-      t.classList.add('armed'); t.textContent='¿Borrar?';
-      setTimeout(()=>{ if(t.isConnected&&t.classList.contains('armed')){ t.classList.remove('armed'); t.innerHTML=ic('trash'); } },3500);
-      return;
-    }
     const isG=!!t.dataset.delg, coll=isG?'growth':'events', id=isG?t.dataset.delg:t.dataset.delev;
     const rec=(isG?S.growth:S.events).find(x=>x.id===id); if(!rec) return;
+    if(!await confirmBox({title:'¿Borrar este registro?',msg:recLabel(coll,rec)+'. Se borra en todos los celulares. Podrás deshacerlo justo después.',ok:'Sí, borrar',danger:true})) return;
     const copy=JSON.parse(JSON.stringify(rec)); delete copy.id;
     try{ await remove(coll,id); toast('Registro borrado',()=>write(coll,id,copy)); }catch(e){}
-    return;
+    renderRZ(); return;
   }
   if(t.dataset.tab){ S.tab=t.dataset.tab; render(); window.scrollTo(0,0); return; }
   if(t.dataset.gm){ S.gm=t.dataset.gm; render(); return; }
@@ -1364,7 +1490,24 @@ document.addEventListener('click',async ev=>{
   if(t.dataset.close){ closeSheet(); return; }
   if(t.dataset.fill){ const el=document.getElementById(t.dataset.fill); if(el){ el.value=t.dataset.v; } return; }
   if(t.closest('[data-seg]')&&t.dataset.v!==undefined){ t.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===t)); return; }
-  if(t.dataset.del&&S.sheet&&S.sheet.onDelete){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Toca de nuevo para eliminar'; return; } try{ if(await S.sheet.onDelete()) closeSheet(); }catch(e){} return; }
+  if(t.dataset.del&&S.sheet&&S.sheet.onDelete){
+    if(!await confirmBox({title:'¿Eliminar este registro?',msg:'Se borrará en todos los celulares. Podrás deshacerlo justo después con el botón Deshacer.',ok:'Sí, eliminar',danger:true})) return;
+    try{ if(await S.sheet.onDelete()) closeSheet(); }catch(e){} return; }
+  if(t.dataset.rzmode){ S.rz.mode=t.dataset.rzmode; S.rz.all=false; renderRZ(); return; }
+  if(t.dataset.rzhow){ S.rz.how=t.dataset.rzhow; S.rz.act=S.rz.how==='fecha'?'d':'h'; S.rz.fresh=true; S.rz.all=false; renderRZ(); return; }
+  if(t.dataset.kf){ S.rz.act=t.dataset.kf; S.rz.fresh=true; renderRZ(); return; }
+  if(t.dataset.kp){ rzKey(t.dataset.kp); return; }
+  if(t.dataset.rzt){ S.rz[t.dataset.rzt]=!S.rz[t.dataset.rzt]; renderRZ(); return; }
+  if(t.dataset.rzall){ S.rz.all=true; renderRZ(); return; }
+  if(t.dataset.rzgo){
+    const list=rzTargets(); if(!list||!list.length) return;
+    const n=list.length, nEv=list.filter(x=>x.c==='events').length, nGr=n-nEv;
+    const parts=[nEv?nEv+(nEv===1?' registro del día a día':' registros del día a día'):'',nGr?nGr+(nGr===1?' medida':' medidas'):''].filter(Boolean).join(' y ');
+    const when=S.rz.mode==='all'?'Se borrará TODO: ':'Se borrarán desde el momento elegido hacia atrás: ';
+    if(!await confirmBox({title:'¿Borrar '+n+(n===1?' registro?':' registros?'),msg:when+parts+'. Se borra en todos los celulares. Podrás deshacerlo justo después con el botón Deshacer.',ok:'Sí, borrar',danger:true})) return;
+    if(S.rz.mode==='all'&&!await confirmBox({title:'¿Totalmente seguro?',msg:'Vas a dejar el diario de '+(S.profile.name||'tu bebé')+' vacío. Confirma una vez más.',ok:'Sí, borrar todo',danger:true})) return;
+    t.disabled=true; await bulkDelete(list,n+(n===1?' registro borrado':' registros borrados')); renderRZ(); return;
+  }
   const a=t.dataset.act; if(!a) return;
   if(a==='sleep') toggleSleep();
   else if(a==='breast') toggleBreast(t.dataset.side);
@@ -1374,6 +1517,7 @@ document.addEventListener('click',async ev=>{
   else if(a==='undo') undoLast();
   else if(a==='ai') runAI();
   else if(a==='settings') profileSheet();
+  else if(a==='reset'){ closeSheet(); openReset(); }
   else if(a==='skins') openSheet({title:'Apariencia',noFocus:true,noCancel:true,fields:[{t:'skins'}],saveLabel:'Listo',onSave:async()=>true});
   else if(a==='prevday'){ S.day-=DAY; render(); }
   else if(a==='nextday'){ if(S.day<startOfDay(Date.now())){ S.day+=DAY; render(); } }
