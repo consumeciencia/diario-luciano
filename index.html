@@ -635,7 +635,7 @@ html.noanim .top h1{-webkit-text-fill-color:currentColor;background:none}
 <script>
 /* ===== Nube del diario (GitHub build): sincroniza con el Worker de Cloudflare y avisa por push ===== */
 (function(){
-  const API='https://diario-luciano.leandrovisualai.workers.dev', VAPID='BI6Y427PLIhiyougQgtprA_FpdgX8WqadOWvlj6JymQvS-wIWCx747L18UjOG_0phZpkyXx8jXFAoEMHmkUPwko';
+  const API='https://diario-luciano.leandrovisualai.workers.dev', VAPID='BI6Y427PLIhiyougQgtprA_FpdgX8WqadOWvlj6JymQvS-wIWCx747L18UjOG_0phZpkyXx8jXFAoEMHmkUPwko', FIXED='fH9wsZ7Cc2qY7C6qfToo';
   const K={code:'diario-codigo',dev:'diario-dispositivo',name:'diario-quien',cache:'diario-nube-cache',rev:'diario-nube-rev'};
   const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
   const rnd=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return btoa(String.fromCharCode(...a)).replace(/[+/=]/g,'').slice(0,n*2)};
@@ -745,8 +745,10 @@ html.noanim .top h1{-webkit-text-fill-color:currentColor;background:none}
     }catch(e){}
   }
   async function ready(){
-    const h=fromHash(); if(h&&h!==code){ code=null; }
-    if(!code){ const up=await setup(); if(up) await uploadLocal(); }
+    if(code!==FIXED){ code=FIXED; ls.set(K.code,code); docs={}; rev=0; }
+    if(!who){ who=/iphone|ipad/i.test(navigator.userAgent)?'iPhone':(/android/i.test(navigator.userAgent)?'Android':'Computador'); ls.set(K.name,who); }
+    try{ const r=await fetch(base()+'/state?since=0',{cache:'no-store'}); const j=await r.json(); if(j&&j.rev===0) await uploadLocal(); }catch(e){}
+    fetch(base()+'/sub',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,name:who})}).catch(()=>{});
     startLoop();
   }
   /* ---------- menú: compartir y avisos ---------- */
@@ -764,12 +766,11 @@ html.noanim .top h1{-webkit-text-fill-color:currentColor;background:none}
   async function menu(){
     const st=await pushState();
     const need=isIOS&&!standalone;
-    const o=overlay('<h2>Compartir y avisos</h2><p>Estás como <b>'+esc(who||'—')+'</b>. Para que otra persona vea y anote lo mismo, mándale este enlace y que lo abra en su celular:</p><div class="code">'+esc(link())+'</div><button id="nbs">Compartir enlace</button><button class="g" id="nbcp">Copiar enlace</button>'
+    const o=overlay('<h2>Conexión y avisos</h2><p>Este celular está conectado automáticamente al diario de Luciano: lo que se anota en cualquier celular aparece en todos.</p><p>Así te ven los demás:</p><input id="nbn" value="'+esc(who)+'" placeholder="Tu nombre (ej. Mamá)"><button class="g" id="nbsn">Guardar nombre</button>'
       +'<h2 style="margin-top:20px">Avisos en este celular</h2>'+(need?'<p>En iPhone primero instala la app: toca Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono y vuelve aquí.</p>':(st==='no'?'<p>Este navegador no permite avisos.</p>':'<p>Recibe un aviso cuando otra persona registre algo (por ejemplo «Mamá registró: Se durmió»).</p><button id="nbp">'+(st==='on'?'Desactivar avisos':'Activar avisos')+'</button>'))
       +'<p class="err" id="nbe"></p><button class="g" id="nbx">Cerrar</button>');
     o.querySelector('#nbx').onclick=closeOv; const e=o.querySelector('#nbe');
-    o.querySelector('#nbcp').onclick=async()=>{ try{ await navigator.clipboard.writeText(link()); e.style.color='#2a7a3b'; e.textContent='Enlace copiado.'; }catch(x){ e.textContent='No se pudo copiar; mantén pulsado el enlace para copiarlo.'; } };
-    o.querySelector('#nbs').onclick=async()=>{ try{ if(navigator.share) await navigator.share({title:'Diario de Luciano',text:'Entra al diario de Luciano:',url:link()}); else { await navigator.clipboard.writeText(link()); e.style.color='#2a7a3b'; e.textContent='Enlace copiado.'; } }catch(x){} };
+    o.querySelector('#nbsn').onclick=async()=>{ const v=o.querySelector('#nbn').value.trim(); if(!v) return; who=v; ls.set(K.name,v); try{ await fetch(base()+'/sub',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,name:who})}); e.style.color='#2a7a3b'; e.textContent='Nombre guardado.'; }catch(x){ e.textContent='No se pudo guardar.'; } };
     const pb=o.querySelector('#nbp'); if(pb) pb.onclick=async()=>{ pb.disabled=true; try{ if(st==='on') await disablePush(); else await enablePush(); menu(); }catch(x){ e.textContent=x.message||'No se pudo.'; pb.disabled=false; } };
   }
   document.addEventListener('click',ev=>{ const t=ev.target.closest&&ev.target.closest('[data-act="cloud"]'); if(t){ ev.stopPropagation(); menu(); } },true);
@@ -2183,15 +2184,17 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.27-4';
+const APP_VERSION='2026.11.27-5';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.27-5','27 de noviembre',[
+    ['sun','Todos los celulares quedan conectados solos al diario de Luciano, sin pantallas ni enlaces. Lo que se anota en uno aparece en los demás, y la app se actualiza sola.',3]]],
   ['2026.11.27-4','27 de noviembre',[
     ['heart','Nuevo botón «Pecho» para cuando no quieres decir de cuál lado fue. También se puede elegir «Sin lado» al editar.',2]]],
   ['2026.11.27-3','27 de noviembre',[
     ['list','Si hay algo raro (pecho muy largo, mucho rato despierto o horas sin registros), en Hoy aparece «¿Se te olvidó anotar algo?». Puedes poner información aproximada recordando qué pasaba en ese momento, o ignorar el lapso.',3]]],
   ['2026.11.27-2','27 de noviembre',[
-    ['heart','Nuevo: diario compartido. En Ajustes > «Compartir con otro celular y avisos» mandas un enlace y los dos ven y anotan lo mismo, con avisos en el celular cuando el otro registra algo.',3],
+    ['heart','Nuevo: los celulares se sincronizan entre sí y pueden avisar cuando otra persona registra algo.',3],
     ['bars','Si todavía hay pocos datos (menos de 3 días con registros), la app ya no saca conclusiones: ni en Hoy, ni en Análisis, ni en el Historial.',3]]],
   ['2026.11.27-1','27 de noviembre',[
     ['undo','Nuevo botón Rehacer, junto a Deshacer: vuelve a poner lo que acabas de deshacer.',3],
@@ -2331,6 +2334,7 @@ async function refreshAll(){
 
 checkNews();
 document.documentElement.classList.add('noclaude');
+window.nubeAuto=1; const chk=()=>{ if(!document.hidden&&!S.sheet) checkUpdate(); }; document.addEventListener('visibilitychange',chk); setInterval(chk,300000); setTimeout(chk,4000);
 window.nubeMsg=function(c,d){ const w=(window.nubeWho&&window.nubeWho())||'Alguien'; if(c==='growth') return w+' anotó una medida'; const f=evInfo(d); return w+' registró: '+f.t+(f.s?' · '+f.s:''); };
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 init();
