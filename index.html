@@ -999,7 +999,7 @@ const whoName = e => e.who ? (e.who===S.me ? 'tú' : (S.names[e.who]||'')) : '';
 /* ---------- eventos ---------- */
 const FEED = ['breast','bottle','solid'];
 function openBreast(){ return S.events.find(e=>e.type==='breast'&&!e.end); }
-const SIDE = {izq:'izquierdo',der:'derecho'};
+const SIDE = {izq:'izquierdo',der:'derecho',nd:'sin lado'};
 const DIAP = {pipi:'Pipí',popo:'Popó',ambos:'Pipí y popó'};
 const AMT = {poco:'poco',medio:'medio',mucho:'mucho'};
 
@@ -1009,7 +1009,7 @@ function evInfo0(e){
     case 'durmio': { const w=sleepInfo().pair[e.id], L=sleepInfo().last; return {i:'moon',c:'sleep',t:'Se durmió',s:w?'Durmió '+fmtDur(w.ts-e.ts)+' · hasta las '+hm(w.ts):(L&&L.id===e.id?'Durmiendo ahora':'Falta «Se despertó» después')}; }
     case 'desperto': { const d=sleepInfo().pair[e.id]; return {i:'sun',c:'sleep',t:'Se despertó',s:d?'Después de dormir '+fmtDur(e.ts-d.ts):'Falta «Se durmió» antes'}; }
     case 'sleep': return {i:'moon',c:'sleep',t:e.end?'Durmió '+fmtDur(e.end-e.ts):'Durmiendo',s:e.end?hm(e.ts)+' a '+hm(e.end):'desde las '+hm(e.ts)};
-    case 'breast': return {i:'heart',c:'feed',t:'Pecho '+(SIDE[e.side]||''),s:e.end?fmtDur(e.end-e.ts):'en curso'};
+    case 'breast': return {i:'heart',c:'feed',t:'Pecho'+(e.side&&e.side!=='nd'&&SIDE[e.side]?' '+SIDE[e.side]:''),s:e.end?fmtDur(e.end-e.ts):'en curso'};
     case 'bottle': return {i:'bottle',c:'feed',t:(e.ml||0)+' ml',s:e.kind==='materna'?'Biberón con leche materna':'Biberón con fórmula'};
     case 'solid': return {i:'spoon',c:'feed',t:e.food||'Sólidos',s:'Sólidos'+(e.amount?' · '+AMT[e.amount]:'')};
     case 'diaper': return {i:'drop',c:'diaper',t:DIAP[e.kind]||'Pañal',s:'Pañal'};
@@ -1073,7 +1073,7 @@ function openGapSheet(){
     +(after&&after.ts<=g.to?'<p style="margin-top:8px">Lo siguiente que sí quedó anotado:</p><ul>'+li(after)+'</ul>':'')
     +(mine.length?'<p style="margin-top:8px">Ya agregaste aquí: <b>'+mine.length+'</b> registro'+(mine.length>1?'s':'')+' aproximado'+(mine.length>1?'s':'')+'.</p>':'')+'</div>'
     +'<p class="note" style="margin:0 0 8px">Toca lo que pasó en ese lapso; cada botón te pregunta la hora.</p>'
-    +'<div class="grid g2">'+[['breast','izq','heart','Pecho izquierdo'],['breast','der','heart','Pecho derecho'],['bottle','','bottle','Biberón'],['solid','','spoon','Sólidos'],['diaper','pipi','drop','Pañal'],['durmio','','moon','Se durmió'],['desperto','','sun','Se despertó'],['med','','pill','Medicina']]
+    +'<div class="grid g2">'+[['breast','izq','heart','Pecho izquierdo'],['breast','der','heart','Pecho derecho'],['breast','nd','heart','Pecho (sin lado)'],['bottle','','bottle','Biberón'],['solid','','spoon','Sólidos'],['diaper','pipi','drop','Pañal'],['durmio','','moon','Se durmió'],['desperto','','sun','Se despertó'],['med','','pill','Medicina']]
       .map(x=>'<button type="button" class="act c-feed" data-act="gfill" data-gt="'+x[0]+'" data-gs="'+x[1]+'">'+ic(x[2])+'<span>'+x[3]+'</span></button>').join('')+'</div>';
   openSheet({title:'Completar el lapso',noFocus:true,fields:[{t:'html',h}],saveLabel:'Listo',
     extra:'<button class="ghost" type="button" data-act="gapign">Ignorar este lapso</button>',
@@ -1213,7 +1213,7 @@ function eventSheet(type,e){
     build=()=>{ const s=fromLocalInput(val('ts')), en=val('end')?fromLocalInput(val('end')):null; if(en!=null&&en<=s) return 'La hora de despertar debe ser después de dormirse.'; return {type,ts:s,end:en}; };
   } else if(type==='breast'){
     title='Pecho';
-    fields=[{t:'seg',id:'side',l:'Lado',v:e.side,o:[['izq','Izquierdo'],['der','Derecho']]},{t:'datetime-local',id:'ts',l:'Inicio',v:toLocalInput(e.ts)},
+    fields=[{t:'seg',id:'side',l:'Lado',v:e.side,o:[['izq','Izquierdo'],['der','Derecho'],['nd','Sin lado']]},{t:'datetime-local',id:'ts',l:'Inicio',v:toLocalInput(e.ts)},
       {t:'number',id:'min',l:'Duración (min), vacío si sigue en curso',v:e.end?Math.round((e.end-e.ts)/60000):'',step:'1'}];
     build=()=>{ const s=fromLocalInput(val('ts')), m=num('min'); return {type,ts:s,side:val('side'),end:m!=null&&m>0?s+m*60000:null}; };
   }
@@ -1579,7 +1579,7 @@ function viewHoy(){
   const feedTile=tile('Última toma',feedTs?'<span class="tick" data-ts="'+feedTs+'" data-m="since"></span>':'—',lastFeed?esc(evInfo(lastFeed).t):'sin registros');
   const dayTile=tile('Hoy',t.feeds+' tomas',t.diapers+' pañales · '+sleepH(t.sleepMs)+' h');
   const side=(s,l)=>{ const on=ob&&ob.side===s;
-    return '<button class="act c-feed'+(on?' on':'')+'" data-act="breast" data-side="'+s+'">'+ic('heart')+'<span>Pecho '+l+'</span><small>'+(on?'<span class="tick" data-ts="'+ob.ts+'" data-m="clock"></span> · toca para parar':'toca para empezar')+'</small></button>'; };
+    return '<button class="act c-feed'+(on?' on':'')+'"'+(s==='nd'?' style="grid-column:1/-1"':'')+' data-act="breast" data-side="'+s+'">'+ic('heart')+'<span>Pecho'+(l?' '+l:'')+'</span><small>'+(on?'<span class="tick" data-ts="'+ob.ts+'" data-m="clock"></span> · toca para parar':(s==='nd'?'sin elegir lado':'toca para empezar'))+'</small></button>'; };
   const recent=S.events.slice(0,6);
   return '<div class="status">'+sleepTile+feedTile+dayTile+'</div>'+gapCard()+insHTML(homeInsights())
   +'<div class="sec">Sueño</div>'
@@ -1587,7 +1587,7 @@ function viewHoy(){
     const sub=ov?'Cambiado: toca para registrar «'+KW[sh]+'»':(os?'Durmiendo hace <span class="tick" data-ts="'+os.ts+'" data-m="dur"></span>':'Un toque para registrar');
     return '<button class="act big c-sleep'+(os?' on':'')+(ov?' override':'')+'" style="width:100%" data-act="sleep">'+ic(w?'sun':'moon')+'<span>'+KW[sh]+'<small>'+sub+'</small></span></button>'
      +'<button type="button" class="altbtn c-sleep" data-act="sleepalt">'+ic('swap')+'<span><b>'+(ov?'Volver a «'+KW[otherSP(sh)]+'»':'Cambiar a «'+KW[otherSP(sh)]+'»')+'</b><small>'+(ov?'Deja el botón como estaba':(os?'Si se despertó y se volvió a dormir sin anotarlo':'Si se durmió y no lo anotaste'))+'</small></span></button>'; })()
-  +'<div class="sec">Comida</div><div class="grid g2">'+side('izq','izquierdo')+side('der','derecho')
+  +'<div class="sec">Comida</div><div class="grid g2">'+side('izq','izquierdo')+side('der','derecho')+side('nd','')
   +'<button class="act c-feed" data-act="bottle">'+ic('bottle')+'<span>Biberón</span><small>fórmula o leche materna</small></button>'
   +'<button class="act c-feed" data-act="solid">'+ic('spoon')+'<span>Sólidos</span><small>papillas y más</small></button></div>'
   +'<div class="sec">Pañal</div><div class="grid g3">'
@@ -1863,7 +1863,7 @@ function homeInsights(){
   const iv=feedInterval(now-7*DAY,now), lf=S.events.find(e=>e.type==='breast'||e.type==='bottle');
   if(iv&&lf){ const next=lf.ts+iv; out.push({l:next<now?'warn':'info',t:next<now?'Ya pasó su intervalo habitual entre tomas':'Próxima toma cerca de las '+hm(next),d:'Suele comer cada '+fmtDur(iv)+'; la última toma empezó a las '+hm(lf.ts)+'.'}); }
   const lb=S.events.find(e=>e.type==='breast');
-  if(lb&&!openBreast()) out.push({l:'info',t:'Siguiente pecho: '+(lb.side==='izq'?'derecho':'izquierdo'),d:'La última toma fue del lado '+SIDE[lb.side]+', a las '+hm(lb.ts)+'.'});
+  if(lb&&lb.side!=='nd'&&!openBreast()) out.push({l:'info',t:'Siguiente pecho: '+(lb.side==='izq'?'derecho':'izquierdo'),d:'La última toma fue del lado '+SIDE[lb.side]+', a las '+hm(lb.ts)+'.'});
   return out;
 }
 
@@ -2183,9 +2183,11 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.27-3';
+const APP_VERSION='2026.11.27-4';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.27-4','27 de noviembre',[
+    ['heart','Nuevo botón «Pecho» para cuando no quieres decir de cuál lado fue. También se puede elegir «Sin lado» al editar.',2]]],
   ['2026.11.27-3','27 de noviembre',[
     ['list','Si hay algo raro (pecho muy largo, mucho rato despierto o horas sin registros), en Hoy aparece «¿Se te olvidó anotar algo?». Puedes poner información aproximada recordando qué pasaba en ese momento, o ignorar el lapso.',3]]],
   ['2026.11.27-2','27 de noviembre',[
