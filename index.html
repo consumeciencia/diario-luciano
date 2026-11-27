@@ -128,6 +128,11 @@ html.scrolled .top .iconbtn{width:38px;height:38px}
 .legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid var(--grow);vertical-align:middle;margin-right:6px}
 .legend i.d{border-top:2px dashed var(--muted)}
 .note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.gapcard{background:var(--surface);border:1px solid var(--line);border-left:4px solid #E0A030;border-radius:14px;padding:12px 14px;margin:10px 0}
+.gapcard b{display:block;font-size:15.5px}.gapcard p{margin:4px 0 10px;font-size:14px;line-height:1.4;color:var(--muted)}
+.gapcard .gb{display:flex;gap:8px}.gapcard .gb button{flex:1;min-height:42px;border-radius:12px;border:1.5px solid var(--line);background:none;font-weight:700}
+.gapcard .gb button.p{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.rcall{background:var(--surface2,rgba(127,127,127,.1));border-radius:14px;padding:12px;margin:0 0 12px}.rcall h3{margin:0 0 6px;font-size:16px}.rcall p{margin:4px 0;font-size:14px;line-height:1.4}.rcall ul{margin:6px 0 0;padding-left:18px;font-size:14px}.rcall li{margin:2px 0}
 .primary{width:100%;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-weight:700;min-height:54px;font-size:17px}
 .ghost{width:100%;border:1.5px solid var(--line);border-radius:16px;background:none;min-height:50px;font-weight:600}
 .danger{width:100%;border:1.5px solid color-mix(in srgb,var(--health) 50%,var(--line));border-radius:16px;background:none;color:var(--health);min-height:50px;font-weight:700}
@@ -998,7 +1003,8 @@ const SIDE = {izq:'izquierdo',der:'derecho'};
 const DIAP = {pipi:'Pipí',popo:'Popó',ambos:'Pipí y popó'};
 const AMT = {poco:'poco',medio:'medio',mucho:'mucho'};
 
-function evInfo(e){
+function evInfo(e){ const r=evInfo0(e); if(e.aprox) r.s=(r.s?r.s+' · ':'')+'aprox.'; return r; }
+function evInfo0(e){
   switch(e.type){
     case 'durmio': { const w=sleepInfo().pair[e.id], L=sleepInfo().last; return {i:'moon',c:'sleep',t:'Se durmió',s:w?'Durmió '+fmtDur(w.ts-e.ts)+' · hasta las '+hm(w.ts):(L&&L.id===e.id?'Durmiendo ahora':'Falta «Se despertó» después')}; }
     case 'desperto': { const d=sleepInfo().pair[e.id]; return {i:'sun',c:'sleep',t:'Se despertó',s:d?'Después de dormir '+fmtDur(e.ts-d.ts):'Falta «Se durmió» antes'}; }
@@ -1023,6 +1029,65 @@ async function addEvent(ev,msg){
   try{ await write('events',ev.id,ev); toast(msg,()=>remove('events',ev.id)); }catch(e){}
 }
 
+/* ---------- lapsos que parecen olvidados ---------- */
+const GKEY='diario-gaps';
+function gapDone(){ try{ return JSON.parse(localStorage.getItem(GKEY)||'{}'); }catch(e){ return {}; } }
+function gapMark(k,v){ try{ const g=gapDone(); g[k]=v; localStorage.setItem(GKEY,JSON.stringify(g)); }catch(e){} S.gp=null; render(); }
+function anomaly(){
+  const now=Date.now(), a=ageAt(now); if(a==null||!S.events.length) return null;
+  const done=gapDone(), os=openSleep(), ob=openBreast(), hr=new Date(now).getHours(), quiet=hr>=23||hr<6;
+  if(ob&&now-ob.ts>45*60000){ const k='b:'+ob.id; if(!done[k]) return {k,kind:'breast',from:ob.ts,to:now,ev:ob,text:'El pecho '+SIDE[ob.side]+' lleva '+fmtDur(now-ob.ts)+' en curso. ¿Se olvidó pararlo?'}; }
+  const lb=S.events.find(e=>e.type==='breast'&&e.end&&e.end-e.ts>60*60000&&now-e.ts<2*DAY);
+  if(lb){ const k='b:'+lb.id; if(!done[k]) return {k,kind:'breast',from:lb.ts,to:lb.end,ev:lb,text:'Un pecho '+SIDE[lb.side]+' quedó anotado con '+fmtDur(lb.end-lb.ts)+'. ¿Se olvidó pararlo a tiempo?'}; }
+  if(quiet||os) return null;
+  const lw=lastWakeObj();
+  if(lw){ const ww=wakeWindow(a), lim=Math.max(ww[1]*1.8,180)*60000, k='w:'+lw.end;
+    if(now-lw.end>lim&&!done[k]) return {k,kind:'awake',from:Math.max(lw.end,S.events[0].ts),to:now,text:'Lleva '+fmtDur(now-lw.end)+' despierto, más de lo habitual a su edad. ¿Se te olvidó anotar una siesta u otra cosa?'}; }
+  const last=S.events[0], kk='l:'+last.id;
+  if(!ob&&now-last.ts>6*36e5&&!done[kk]&&!done['w:'+(lw&&lw.end)]) return {k:kk,kind:'silent',from:last.ts,to:now,text:'Hace '+fmtDur(now-last.ts)+' que no se anota nada. ¿Se te olvidó registrar algo?'};
+  return null;
+}
+function gapCard(){
+  const g=anomaly(); if(!g) return ''; S.gp=g;
+  return '<div class="gapcard"><b>¿Se te olvidó anotar algo?</b><p>'+esc(g.text)+'</p><div class="gb"><button class="p" data-act="gapyes">Sí, me faltó</button><button data-act="gapno">No, así fue</button></div></div>';
+}
+function gapAsk(){
+  const g=S.gp; if(!g) return;
+  if(g.kind==='breast'){
+    openSheet({title:'Pecho muy largo',noFocus:true,fields:[{t:'html',h:'<p class="note">'+esc(g.text)+'</p>'}],saveLabel:'Corregir la duración',
+      extra:'<button class="ghost" type="button" data-act="gapign">Ignorar este lapso</button>',
+      onSave:async()=>{ setTimeout(()=>eventSheet('breast',g.ev),0); return true; }});
+    return;
+  }
+  openSheet({title:'¿Qué hacemos con este lapso?',noFocus:true,fields:[{t:'html',h:'<p class="note">De las '+esc(hm(g.from))+' a las '+esc(hm(g.to))+' ('+esc(fmtDur(g.to-g.from))+') no hay registros. Puedes poner información aproximada de lo que recuerdes, o ignorar el lapso y no volver a preguntar.</p>'}],
+    saveLabel:'Poner información aproximada',extra:'<button class="ghost" type="button" data-act="gapign">Ignorar este lapso</button>',
+    onSave:async()=>{ setTimeout(openGapSheet,0); return true; }});
+}
+function openGapSheet(){
+  const g=S.gp; if(!g) return;
+  const before=S.events.filter(e=>e.ts<=g.from+60000).slice(0,3), after=S.events.slice().reverse().find(e=>e.ts>g.from+60000);
+  const li=e=>'<li><b>'+esc(hm(e.ts))+'</b> · '+esc(evInfo(e).t)+(evInfo(e).s?' <span style="opacity:.7">('+esc(evInfo(e).s)+')</span>':'')+'</li>';
+  const mine=S.events.filter(e=>e.aprox&&e.ts>=g.from-60000&&e.ts<=g.to+60000);
+  const h='<div class="rcall"><h3>¿Qué recuerdas desde las '+esc(hm(g.from))+'?</h3><p>Lapso sin anotar: de las <b>'+esc(hm(g.from))+'</b> a las <b>'+esc(hm(g.to))+'</b> ('+esc(fmtDur(g.to-g.from))+').</p>'
+    +(before.length?'<p>En ese momento estaba pasando:</p><ul>'+before.map(li).join('')+'</ul>':'')
+    +(after&&after.ts<=g.to?'<p style="margin-top:8px">Lo siguiente que sí quedó anotado:</p><ul>'+li(after)+'</ul>':'')
+    +(mine.length?'<p style="margin-top:8px">Ya agregaste aquí: <b>'+mine.length+'</b> registro'+(mine.length>1?'s':'')+' aproximado'+(mine.length>1?'s':'')+'.</p>':'')+'</div>'
+    +'<p class="note" style="margin:0 0 8px">Toca lo que pasó en ese lapso; cada botón te pregunta la hora.</p>'
+    +'<div class="grid g2">'+[['breast','izq','heart','Pecho izquierdo'],['breast','der','heart','Pecho derecho'],['bottle','','bottle','Biberón'],['solid','','spoon','Sólidos'],['diaper','pipi','drop','Pañal'],['durmio','','moon','Se durmió'],['desperto','','sun','Se despertó'],['med','','pill','Medicina']]
+      .map(x=>'<button type="button" class="act c-feed" data-act="gfill" data-gt="'+x[0]+'" data-gs="'+x[1]+'">'+ic(x[2])+'<span>'+x[3]+'</span></button>').join('')+'</div>';
+  openSheet({title:'Completar el lapso',noFocus:true,fields:[{t:'html',h}],saveLabel:'Listo',
+    extra:'<button class="ghost" type="button" data-act="gapign">Ignorar este lapso</button>',
+    onSave:async()=>{ gapMark(g.k,'ok'); return true; }});
+}
+function gapFill(t,sd){
+  const g=S.gp; if(!g) return;
+  let ts=Math.round((g.from+Math.min(g.to-g.from,6*36e5)/2)/(5*60000))*5*60000;
+  const e={__new:true,aprox:true,ts};
+  if(t==='breast'){ e.side=sd; e.end=ts+10*60000; }
+  if(t==='diaper'){ e.kind=sd||'pipi'; }
+  closeSheet(); eventSheet(t,e);
+}
+function gapIgnore(){ const g=S.gp; if(!g) return; closeSheet(); gapMark(g.k,'ign'); toast('Lapso ignorado: no volveré a preguntar.'); }
 /* ---------- acciones de un toque ---------- */
 async function toggleBreast(side){
   const o=openBreast(), now=Date.now();
@@ -1041,6 +1106,7 @@ function fld(f){
   const id='f_'+f.id;
   if(f.t==='seg') return '<div class="fld"><label>'+f.l+'</label><div class="seg" role="group" aria-label="'+esc(f.l)+'" data-seg="'+f.id+'">'+f.o.map(([v,l])=>'<button type="button" data-v="'+v+'" class="'+(v===f.v?'on':'')+'">'+l+'</button>').join('')+'</div></div>';
   if(f.t==='wheel') return wheelHTML(f);
+  if(f.t==='html') return f.h;
   if(f.t==='skins') return '<div class="skins">'+SKINS.map(k=>'<button type="button" class="skinbtn'+(k.id===S.skin?' on':'')+'" data-skinpick="'+k.id+'" aria-pressed="'+(k.id===S.skin)+'"><span class="sw" style="background:conic-gradient('+k.c[0]+' 0 25%,'+k.c[1]+' 0 50%,'+k.c[2]+' 0 75%,'+k.c[3]+' 0);border-color:'+k.ring+'"></span><b>'+esc(k.name)+'</b><small>'+esc(k.d)+'</small></button>').join('')+'</div><button type="button" class="switchrow" data-animtoggle="1" role="switch" aria-checked="'+S.anim+'"><span><b>Animaciones</b><small>Brillos, colores y movimientos suaves del fondo</small></span><span class="switch'+(S.anim?' on':'')+'"><i></i></span></button>';
   if(f.t==='chips') return '<div class="chips">'+f.o.map(v=>'<button type="button" data-fill="f_'+f.id+'" data-v="'+v+'">'+v+'</button>').join('')+'</div>';
   const extra=f.t==='number'?' inputmode="decimal" step="'+(f.step||'any')+'" min="0"':'';
@@ -1108,7 +1174,7 @@ function val(id){
 function num(id){ const v=val(id).replace(',','.'); if(v==='') return null; const n=Number(v); return isFinite(n)?n:null; }
 
 function eventSheet(type,e){
-  const edit=!!e, now=Date.now(), ts=e?e.ts:now;
+  const pre=e&&e.__new?e:null, edit=!!e&&!pre, now=Date.now(), ts=e?e.ts:now;
   const T=n=>({t:'datetime-local',id:'ts',l:n||'Hora',v:toLocalInput(ts)});
   let title,fields,build;
   if(type==='bottle'){
@@ -1153,15 +1219,17 @@ function eventSheet(type,e){
   }
   if(!fields) return;
   fields.push({t:'text',id:'note',l:'Nota (opcional)',v:e&&e.note?e.note:'',ph:'Ej. estaba inquieto, vomitó un poco…'});
-  openSheet({title:(edit?'Editar · ':'')+title,fields,saveLabel:edit?'Guardar cambios':'Guardar',
+  openSheet({title:(edit?'Editar · ':'')+title+(pre?' · aproximado':''),fields,saveLabel:edit?'Guardar cambios':'Guardar',
     onSave:async()=>{
       const r=build(); if(typeof r==='string'){ toast(r); return false; }
       r.note=val('note');
       if(r.ts==null){ toast('Revisa la fecha y la hora.'); return false; }
-      const out=Object.assign({},e||{},r); if(!out.id) out.id=newId(); if(!out.who&&S.me) out.who=S.me;
+      const out=Object.assign({},edit?e:{},r); if(!out.id) out.id=newId(); if(!out.who&&S.me) out.who=S.me; if(pre&&pre.aprox) out.aprox=true;
       const prev=edit?JSON.parse(JSON.stringify(e)):null;
       await write('events',out.id,out);
-      toast(edit?'Cambios guardados':'Guardado',edit?()=>write('events',prev.id,prev):()=>remove('events',out.id)); return true;
+      toast(edit?'Cambios guardados':'Guardado',edit?()=>write('events',prev.id,prev):()=>remove('events',out.id));
+      if(pre&&S.gp) setTimeout(openGapSheet,0); else if(edit&&S.gp&&S.gp.kind==='breast'&&S.gp.ev&&S.gp.ev.id===e.id) gapMark(S.gp.k,'ok');
+      return true;
     },
     onDelete:edit?async()=>{ const c=JSON.parse(JSON.stringify(e)); await remove('events',e.id); toast('Registro eliminado',()=>write('events',c.id,c)); return true; }:null});
 }
@@ -1513,7 +1581,7 @@ function viewHoy(){
   const side=(s,l)=>{ const on=ob&&ob.side===s;
     return '<button class="act c-feed'+(on?' on':'')+'" data-act="breast" data-side="'+s+'">'+ic('heart')+'<span>Pecho '+l+'</span><small>'+(on?'<span class="tick" data-ts="'+ob.ts+'" data-m="clock"></span> · toca para parar':'toca para empezar')+'</small></button>'; };
   const recent=S.events.slice(0,6);
-  return '<div class="status">'+sleepTile+feedTile+dayTile+'</div>'+insHTML(homeInsights())
+  return '<div class="status">'+sleepTile+feedTile+dayTile+'</div>'+gapCard()+insHTML(homeInsights())
   +'<div class="sec">Sueño</div>'
   +(()=>{ const sh=sleepShown(), ov=!!S.sleepOverride, w=sh==='desperto';
     const sub=ov?'Cambiado: toca para registrar «'+KW[sh]+'»':(os?'Durmiendo hace <span class="tick" data-ts="'+os.ts+'" data-m="dur"></span>':'Un toque para registrar');
@@ -2022,6 +2090,10 @@ document.addEventListener('click',async ev=>{
   else if(a==='addgrowth') growthSheet(null);
   else if(a==='undo') undoLast();
   else if(a==='redo') redoLast();
+  else if(a==='gapyes') gapAsk();
+  else if(a==='gapno'){ if(S.gp) gapMark(S.gp.k,'no'); }
+  else if(a==='gapign') gapIgnore();
+  else if(a==='gfill') gapFill(t.dataset.gt,t.dataset.gs);
   else if(a==='ai') runAI();
   else if(a==='settings') profileSheet();
   else if(a==='sleepalt') sleepAlt();
@@ -2111,9 +2183,11 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.27-2';
+const APP_VERSION='2026.11.27-3';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.27-3','27 de noviembre',[
+    ['list','Si hay algo raro (pecho muy largo, mucho rato despierto o horas sin registros), en Hoy aparece «¿Se te olvidó anotar algo?». Puedes poner información aproximada recordando qué pasaba en ese momento, o ignorar el lapso.',3]]],
   ['2026.11.27-2','27 de noviembre',[
     ['heart','Nuevo: diario compartido. En Ajustes > «Compartir con otro celular y avisos» mandas un enlace y los dos ven y anotan lo mismo, con avisos en el celular cuando el otro registra algo.',3],
     ['bars','Si todavía hay pocos datos (menos de 3 días con registros), la app ya no saca conclusiones: ni en Hoy, ni en Análisis, ni en el Historial.',3]]],
