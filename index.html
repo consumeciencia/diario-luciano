@@ -157,6 +157,7 @@ h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
 .newslist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .newslist li{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;line-height:1.4;animation:rise .4s ease both}
 .newslist li:nth-child(2){animation-delay:.08s}.newslist li:nth-child(3){animation-delay:.16s}
+.lvl{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--lc);background:color-mix(in srgb,var(--lc) 14%,transparent);border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
 .newslist .ic{color:var(--accent);width:20px;height:20px;margin-top:1px}
 .gapends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
 .gapends b{display:block;color:var(--ink);font-size:13px}
@@ -1629,6 +1630,7 @@ document.addEventListener('click',async ev=>{
     try{ if(await S.sheet.onDelete()) closeSheet(); }catch(e){} return; }
   if(t.dataset.gapadj&&S.gap){ const g=S.gap; g.v=Math.min(g.to,Math.max(g.from,g.v+Number(t.dataset.gapadj)*60000)); gapUpdate(); return; }
   if(t.dataset.gapsave&&S.gap){ gapSave(); return; }
+  if(t.dataset.newsall!==undefined&&S.sheet&&S.sheet.news){ showNews(t.dataset.newsall||'',true); return; }
   if(t.dataset.flip){ flipChooser(t.dataset.flip); return; }
   if(t.dataset.flipdo){ const [fid,fk]=t.dataset.flipdo.split('|'); S.sheet=null; document.getElementById('sheetroot').innerHTML=''; flipPoint(fid,fk); return; }
   if(t.dataset.rzmode){ S.rz.mode=t.dataset.rzmode; S.rz.all=false; renderRZ(); return; }
@@ -1657,7 +1659,7 @@ document.addEventListener('click',async ev=>{
   else if(a==='settings') profileSheet();
   else if(a==='sleepalt') sleepAlt();
   else if(a==='reset'){ closeSheet(); openReset(); }
-  else if(a==='news'){ closeSheet(); showNews(undefined); }
+  else if(a==='news'){ closeSheet(); showNews(null,true); }
   else if(a==='skins') openSheet({title:'Apariencia',noFocus:true,noCancel:true,fields:[{t:'skins'}],saveLabel:'Listo',onSave:async()=>true});
   else if(a==='prevday'){ S.day-=DAY; render(); }
   else if(a==='nextday'){ if(S.day<startOfDay(Date.now())){ S.day+=DAY; render(); } }
@@ -1742,32 +1744,46 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.26-4';
+const APP_VERSION='2026.11.26-5';
+// Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.26-5','26 de noviembre',[
+    ['heart','Cuando se juntan muchos cambios, este letrero muestra solo los más importantes; puedes ver todos con un botón.',2],
+    ['list','Cada novedad indica su importancia: Importante, Mejora o Detalle.',1]]],
   ['2026.11.26-4','26 de noviembre',[
-    ['swap','Cambiar «Se durmió» por «Se despertó» con el botón de abajo del sueño, y en el Historial con el botón de flechas.'],
-    ['moon','Si quedan dos iguales seguidos, la app pide el que falta con una barra que mueve la hora entre los dos momentos.'],
-    ['undo','Jala la pantalla hacia abajo para actualizar los datos y la app. Al haber versión nueva, verás este letrero.']]],
+    ['swap','Cambiar «Se durmió» por «Se despertó» con el botón de abajo del sueño, y en el Historial con el botón de flechas.',3],
+    ['moon','Si quedan dos iguales seguidos, la app pide el que falta con una barra que mueve la hora entre los dos momentos.',3],
+    ['undo','Jala la pantalla hacia abajo para actualizar los datos y la app. Al haber versión nueva, verás este letrero.',2]]],
   ['2026.11.26-3','26 de noviembre',[
-    ['trash','Borrar datos (en el engranaje): todo, o desde un momento hacia atrás, con teclado de números propio.'],
-    ['trash','Lista previa para borrar uno por uno, y confirmación antes de cualquier borrado.']]],
+    ['trash','Borrar datos (en el engranaje): todo, o desde un momento hacia atrás, con teclado de números propio.',3],
+    ['trash','Lista previa para borrar uno por uno, y confirmación antes de cualquier borrado.',2]]],
   ['2026.11.26-2','26 de noviembre',[
-    ['pencil','Lápiz en cada registro para cambiar hora, cantidad, tipo, lado o nota.'],
-    ['pencil','Notas en todos los registros y medidas.']]],
+    ['pencil','Lápiz en cada registro para cambiar hora, cantidad, tipo, lado o nota.',3],
+    ['pencil','Notas en todos los registros y medidas.',2]]],
   ['2026.11.25-1','25 de noviembre',[
-    ['heart','Animación de inicio propia para cada skin.'],
-    ['palette','Skins con animaciones suaves, que puedes apagar.'],
-    ['grow','Curvas de crecimiento OMS y análisis automático.']]]
+    ['heart','Animación de inicio propia para cada skin.',1],
+    ['palette','Skins con animaciones suaves, que puedes apagar.',1],
+    ['grow','Curvas de crecimiento OMS y análisis automático.',3]]]
 ];
+const LEVELS={3:['Importante','health'],2:['Mejora','accent'],1:['Detalle','muted']};
 const VKEY='diario-version-vista';
-function showNews(fromVer){
-  const items=CHANGELOG.filter(c=>!fromVer||c[0]>fromVer);
-  const list=(items.length?items:CHANGELOG.slice(0,1));
+function showNews(fromVer,all){
+  const groups=CHANGELOG.filter(c=>!fromVer||c[0]>fromVer), list=groups.length?groups:CHANGELOG.slice(0,1);
+  const items=[]; list.forEach(c=>c[2].forEach(x=>items.push({i:x[0],t:x[1],l:x[2]||1,d:c[1]})));
+  const MAX=4, many=items.length>MAX;
+  const li=x=>{ const L=LEVELS[x.l]; return '<li>'+ic(x.i)+'<span><span class="lvl" style="--lc:var(--'+L[1]+')">'+L[0]+'</span>'+esc(x.t)+'</span></li>'; };
+  let body;
+  if(many&&!all){
+    const top=items.slice().sort((a,b)=>b.l-a.l).slice(0,MAX);
+    body='<p class="kphint">Hay '+items.length+' cambios desde la última vez. Estos son los más importantes:</p><ul class="newslist">'+top.map(li).join('')+'</ul>'
+      +'<button type="button" class="ghost" data-newsall="'+esc(fromVer==null?'':fromVer)+'">Ver todos los cambios ('+items.length+')</button>';
+  } else {
+    body=list.map(c=>'<div class="newsgrp"><div class="sec" style="margin:6px 0">'+esc(c[1])+' · versión '+esc(c[0])+'</div><ul class="newslist">'+c[2].map(x=>li({i:x[0],t:x[1],l:x[2]||1})).join('')+'</ul></div>').join('');
+  }
   S.sheet={news:true};
   document.getElementById('sheetroot').innerHTML='<div class="back" id="back"><div class="sheet newsheet" role="dialog" aria-modal="true" aria-label="Novedades">'
-    +'<div class="newstop"><span class="newsbadge">'+ic('heart')+'</span><div><h2>'+(fromVer!==undefined?'¡App actualizada!':'Novedades')+'</h2><p class="kphint">Versión '+esc(APP_VERSION)+'</p></div></div>'
-    +list.map(c=>'<div class="newsgrp"><div class="sec" style="margin:6px 0">'+esc(c[1])+'</div><ul class="newslist">'+c[2].map(([i,t])=>'<li>'+ic(i)+'<span>'+esc(t)+'</span></li>').join('')+'</ul></div>').join('')
-    +'<div class="acts"><button type="button" class="primary" data-close="1">Entendido</button></div></div></div>';
+    +'<div class="newstop"><span class="newsbadge">'+ic('heart')+'</span><div><h2>'+(fromVer!=null?'¡App actualizada!':'Novedades')+'</h2><p class="kphint">Versión '+esc(APP_VERSION)+'</p></div></div>'
+    +body+'<div class="acts"><button type="button" class="primary" data-close="1">Entendido</button></div></div></div>';
 }
 function checkNews(){
   let seen=null; try{ seen=localStorage.getItem(VKEY); }catch(e){}
