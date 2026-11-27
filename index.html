@@ -1826,6 +1826,7 @@ function checkNews(){
   let seen=null; try{ seen=localStorage.getItem(VKEY); }catch(e){}
   if(seen===APP_VERSION) return;
   try{ localStorage.setItem(VKEY,APP_VERSION); }catch(e){}
+  if(!seen) return; // recién instalada o primera vez: no mostrar novedades
   const go=()=>{ if(document.getElementById('splash')) return setTimeout(go,300); if(S.sheet) return setTimeout(go,1500); showNews(seen||''); };
   setTimeout(go,400);
 }
