@@ -127,7 +127,7 @@ h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
 .fld label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
 .fld input[type=text],.fld input[type=number],.fld input[type=date],.fld input[type=datetime-local]{width:100%;min-height:50px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:10px 12px;font:inherit;font-size:17px}
 .acts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:30;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);width:min(380px,calc(100% - 32px));justify-content:space-between;bottom:90px;z-index:30;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .toast button{border:0;background:none;color:inherit;font-weight:700;text-decoration:underline;padding:6px 4px;min-height:36px}
 .growthlist .row .dot{--c:var(--grow)}
 .mt{margin-top:12px}
@@ -163,6 +163,12 @@ h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
 .gapends b{display:block;color:var(--ink);font-size:13px}
 .gapfine{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .gapfine button{min-height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:12.5px;padding:0 2px}
+.nav{transition:transform .28s ease}
+.nav.hide{transform:translateY(115%)}
+html.scrolling #fx i,html.scrolling body::before,html.scrolling body::after,html.scrolling .act::after,html.scrolling .tile::after,html.scrolling .act .ic,html.scrolling .top h1{animation-play-state:paused!important}
+.gaprow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border-radius:14px;border:2px dashed color-mix(in srgb,var(--sleep) 55%,var(--line));background:color-mix(in srgb,var(--sleep) 8%,transparent);color:var(--ink)}
+.gaprow b{display:block;font-size:14px}.gaprow small{display:block;color:var(--muted);font-size:12.5px}
+.gapplus{flex:none;width:34px;height:34px;border-radius:50%;background:var(--sleep);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:700;line-height:1}
 .hbtns{display:flex;gap:8px}
 .cback{position:fixed;inset:0;z-index:40;background:rgba(8,12,20,.55);display:grid;place-items:center;padding:20px}
 .cbox{width:100%;max-width:360px;background:var(--bg);color:var(--ink);border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:up .2s ease}
@@ -754,7 +760,7 @@ async function init(){
     try{ S.me=await user.id(); }catch(e){}
     try{ if(user.can('data.write')===false) S.readonly=true; }catch(e){}
   }
-  if(!db){ S.local=true; loadLocal(); sortAll(); render(); return; }
+  if(!db){ S.local=true; loadLocal(); sortAll(); render(); migrateLegacy(); return; }
   S.db=db;
   if(S.me){ db.doc('data/users/'+S.me+'/prefs').get().then(s=>{ const k=s.exists&&s.data().skin; if(k&&k!==S.skin){ applySkin(k); try{ localStorage.setItem(SKEY,k); }catch(e){} }
     const an=s.exists?s.data().anim:undefined; if(typeof an==='boolean'&&an!==S.anim){ applyAnim(an); try{ localStorage.setItem(AKEY,an?'1':'0'); }catch(e){} } }).catch(()=>{}); }
@@ -763,7 +769,7 @@ async function init(){
   const onErr=e=>{ if(e&&e.code==='revoked'){ S.readonly=true; } S.slow=true; render(); };
   db.collection('events').orderBy('ts','desc').limit(1000).onSnapshot(snap=>{
     const was=S.synced;
-    S.events=snap.docs.map(snapData); done(snap); resolveNames();
+    S.events=snap.docs.map(snapData); spInvalidate(); done(snap); resolveNames(); migrateLegacy();
     if(was&&!snap.metadata.hasPendingWrites){
       snap.docChanges().forEach(c=>{
         if(c.type==='removed') return;
@@ -795,7 +801,6 @@ const whoName = e => e.who ? (e.who===S.me ? 'tú' : (S.names[e.who]||'')) : '';
 
 /* ---------- eventos ---------- */
 const FEED = ['breast','bottle','solid'];
-function openSleep(){ return S.events.find(e=>e.type==='sleep'&&!e.end); }
 function openBreast(){ return S.events.find(e=>e.type==='breast'&&!e.end); }
 const SIDE = {izq:'izquierdo',der:'derecho'};
 const DIAP = {pipi:'Pipí',popo:'Popó',ambos:'Pipí y popó'};
@@ -803,6 +808,8 @@ const AMT = {poco:'poco',medio:'medio',mucho:'mucho'};
 
 function evInfo(e){
   switch(e.type){
+    case 'durmio': { const w=sleepInfo().pair[e.id], L=sleepInfo().last; return {i:'moon',c:'sleep',t:'Se durmió',s:w?'Durmió '+fmtDur(w.ts-e.ts)+' · hasta las '+hm(w.ts):(L&&L.id===e.id?'Durmiendo ahora':'Falta «Se despertó» después')}; }
+    case 'desperto': { const d=sleepInfo().pair[e.id]; return {i:'sun',c:'sleep',t:'Se despertó',s:d?'Después de dormir '+fmtDur(e.ts-d.ts):'Falta «Se durmió» antes'}; }
     case 'sleep': return {i:'moon',c:'sleep',t:e.end?'Durmió '+fmtDur(e.end-e.ts):'Durmiendo',s:e.end?hm(e.ts)+' a '+hm(e.end):'desde las '+hm(e.ts)};
     case 'breast': return {i:'heart',c:'feed',t:'Pecho '+(SIDE[e.side]||''),s:e.end?fmtDur(e.end-e.ts):'en curso'};
     case 'bottle': return {i:'bottle',c:'feed',t:(e.ml||0)+' ml',s:e.kind==='materna'?'Biberón con leche materna':'Biberón con fórmula'};
@@ -816,8 +823,8 @@ function evInfo(e){
 }
 function rowHTML(e){
   const f=evInfo(e), w=whoName(e);
-  const time=e.type==='sleep'&&!e.end ? '<span class="tick" data-ts="'+e.ts+'" data-m="dur"></span>' : esc(hm(e.ts));
-  return '<div class="row c-'+f.c+'"><button class="rowmain" data-edit="'+esc(e.id)+'"><span class="dot">'+ic(f.i)+'</span><span class="tx"><div class="t">'+esc(f.t)+'</div><div class="s">'+esc(f.s)+'</div>'+(e.note?'<div class="nt">'+esc(e.note)+'</div>':'')+'</span><span class="r">'+time+(w?'<br>'+esc(w):'')+'</span></button>'+(e.type==='sleep'?'<button class="rowedit" data-flip="'+esc(e.id)+'" aria-label="Cambiar se durmió o se despertó">'+ic('swap')+'</button>':'')+editBtn('edit',e.id)+delBtn('delev',e.id)+'</div>';
+  const os=openSleep(), time=(e.type==='sleep'&&!e.end)||(os&&os.id===e.id) ? esc(hm(e.ts))+'<br><span class="tick" data-ts="'+e.ts+'" data-m="dur"></span>' : esc(hm(e.ts));
+  return '<div class="row c-'+f.c+'"><button class="rowmain" data-edit="'+esc(e.id)+'"><span class="dot">'+ic(f.i)+'</span><span class="tx"><div class="t">'+esc(f.t)+'</div><div class="s">'+esc(f.s)+'</div>'+(e.note?'<div class="nt">'+esc(e.note)+'</div>':'')+'</span><span class="r">'+time+(w?'<br>'+esc(w):'')+'</span></button>'+(SP[e.type]?'<button class="rowedit" data-flip="'+esc(e.id)+'" aria-label="Cambiar a '+KW[otherSP(e.type)]+'">'+ic('swap')+'</button>':'')+editBtn('edit',e.id)+delBtn('delev',e.id)+'</div>';
 }
 async function addEvent(ev,msg){
   ev.id=newId(); if(S.me) ev.who=S.me;
@@ -825,11 +832,6 @@ async function addEvent(ev,msg){
 }
 
 /* ---------- acciones de un toque ---------- */
-async function toggleSleep(){
-  const o=openSleep();
-  if(o){ const prev=Object.assign({},o); try{ await write('events',o.id,Object.assign({},o,{end:Date.now()})); toast('Se despertó a las '+hm(Date.now()),()=>write('events',prev.id,prev)); }catch(e){} }
-  else addEvent({type:'sleep',ts:Date.now(),end:null},'Se durmió a las '+hm(Date.now()));
-}
 async function toggleBreast(side){
   const o=openBreast(), now=Date.now();
   if(o){
@@ -893,6 +895,10 @@ function eventSheet(type,e){
     title='Pañal';
     fields=[{t:'seg',id:'kind',l:'Tipo',v:e.kind,o:[['pipi','Pipí'],['popo','Popó'],['ambos','Ambos']]},T()];
     build=()=>({type,ts:fromLocalInput(val('ts')),kind:val('kind')});
+  } else if(type==='durmio'||type==='desperto'){
+    title='Sueño';
+    fields=[{t:'seg',id:'stype',l:'Qué pasó',v:e.type,o:[['durmio','Se durmió'],['desperto','Se despertó']]},T()];
+    build=()=>({type:val('stype'),ts:fromLocalInput(val('ts'))});
   } else if(type==='sleep'){
     title='Sueño';
     fields=[{t:'datetime-local',id:'ts',l:'Se durmió',v:toLocalInput(e.ts)},{t:'datetime-local',id:'end',l:'Despertó (déjalo vacío si sigue dormido)',v:e.end?toLocalInput(e.end):''}];
@@ -949,7 +955,7 @@ function profileSheet(){
 /* ---------- cambio que faltó en medio (se durmió / se despertó) ---------- */
 function askGap(cfg){
   return new Promise(res=>{
-    if(cfg.to-cfg.from<2*60000){ res(Math.round(cfg.from+(cfg.to-cfg.from)/2)); return; }
+    if(cfg.to-cfg.from<60000){ toast('Los dos registros están a menos de un minuto: corrige la hora con el lápiz.'); res(null); return; }
     S.gap=Object.assign({v:Math.round((cfg.from+(cfg.to-cfg.from)/2)/60000)*60000,resolve:res},cfg);
     S.sheet={gap:true}; renderGap();
   });
@@ -984,68 +990,91 @@ function gapUpdate(){
 }
 function gapSave(){ const g=S.gap; if(!g) return; const r=g.resolve, v=g.v; S.gap=null; S.sheet=null; document.getElementById('sheetroot').innerHTML=''; r(v); }
 
-/* Botón «Cambiar a…» junto al botón de sueño (lo que se va a registrar ahora) */
+/* ---------- sueño como dos registros: «Se durmió» y «Se despertó» ---------- */
+const SP={durmio:1,desperto:1};
+const KW={durmio:'Se durmió',desperto:'Se despertó'};
+const otherSP=t=>t==='durmio'?'desperto':'durmio';
+let _sp=null;
+function spInvalidate(){ _sp=null; }
+function sleepInfo(){
+  if(_sp) return _sp;
+  const raw=[];
+  S.events.forEach(e=>{
+    if(SP[e.type]) raw.push(e);
+    else if(e.type==='sleep'){ raw.push({id:e.id+'-d',type:'durmio',ts:e.ts,virtual:true}); if(e.end) raw.push({id:e.id+'-w',type:'desperto',ts:e.end,virtual:true}); }
+  });
+  const pts=raw.sort((a,b)=>a.ts-b.ts||(a.type==='durmio'?1:-1));
+  const periods=[], pair={}; let cur=null;
+  pts.forEach(p=>{
+    if(p.type==='durmio') cur=p;
+    else if(cur){ periods.push({ts:cur.ts,end:p.ts,d:cur.id,w:p.id}); pair[cur.id]=p; pair[p.id]=cur; cur=null; }
+  });
+  if(cur) periods.push({ts:cur.ts,end:null,d:cur.id});
+  const gaps={};
+  for(let i=1;i<pts.length;i++) if(pts[i].type===pts[i-1].type) gaps[pts[i].id]={a:pts[i-1],b:pts[i]};
+  if(pts.length&&pts[0].type==='desperto'&&S.events.length<1000) gaps[pts[0].id]={a:null,b:pts[0]};
+  return _sp={pts,periods,pair,gaps,last:pts[pts.length-1]||null};
+}
+function openSleep(){ const L=sleepInfo().last; return L&&L.type==='durmio'?L:null; }
+function lastWakeObj(){ const p=sleepInfo().pts; for(let i=p.length-1;i>=0;i--) if(p[i].type==='desperto') return {end:p[i].ts}; return null; }
+function gapRowFor(e){
+  const g=sleepInfo().gaps[e.id]; if(!g) return '';
+  const miss=otherSP(g.b.type);
+  const txt=g.a?'Falta «'+KW[miss]+'» entre '+hm(g.a.ts)+' y '+hm(g.b.ts):'Falta «Se durmió» antes de las '+hm(g.b.ts);
+  return '<button type="button" class="gaprow" data-gapfill="'+esc(g.b.id)+'"><span class="gapplus">+</span><span><b>'+esc(txt)+'</b><small>Toca para poner la hora con la barra</small></span></button>';
+}
+async function fillGap(bid){
+  const g=sleepInfo().gaps[bid]; if(!g) return;
+  const miss=otherSP(g.b.type), from=g.a?g.a.ts:g.b.ts-12*36e5;
+  const v=await askGap({kind:miss==='desperto'?'wake':'sleep',from,to:g.b.ts,fromLabel:g.a?KW[g.a.type]:'12 h antes',toLabel:KW[g.b.type],
+    intro:g.a?'Hay dos «'+KW[g.b.type]+'» seguidos ('+hm(g.a.ts)+' y '+hm(g.b.ts)+'). Falta «'+KW[miss]+'» en medio.':'Antes de este «Se despertó» no hay un «Se durmió».'});
+  if(v==null) return;
+  const nu={id:newId(),type:miss,ts:v}; if(S.me) nu.who=S.me;
+  try{ await write('events',nu.id,nu); }catch(e){ return; }
+  toast(KW[miss]+' a las '+hm(v)+' agregado',()=>remove('events',nu.id));
+}
+async function flipPoint(id){
+  const e=S.events.find(x=>x.id===id); if(!e||!SP[e.type]) return;
+  const prev=JSON.parse(JSON.stringify(e)), nt=otherSP(e.type);
+  try{ await write('events',id,Object.assign({},e,{type:nt})); }catch(err){ return; }
+  spInvalidate();
+  const g=Object.values(sleepInfo().gaps).some(x=>x.b.id===id||(x.a&&x.a.id===id));
+  toast('Cambiado a «'+KW[nt]+'»'+(g?'. Toca el + para completar lo que falta.':''),()=>write('events',id,prev));
+}
+async function toggleSleep(){
+  const o=openSleep(), now=Date.now();
+  if(o) addEvent({type:'desperto',ts:now},'Se despertó a las '+hm(now)+' · durmió '+fmtDur(now-o.ts));
+  else addEvent({type:'durmio',ts:now},'Se durmió a las '+hm(now));
+}
 async function sleepAlt(){
-  const now=Date.now(), o=openSleep();
-  if(o){
-    const v=await askGap({kind:'wake',from:o.ts,to:now,fromLabel:'Se durmió',toLabel:'Ahora',
-      intro:'Estaba dormido desde las '+hm(o.ts)+' y vas a registrar «Se durmió» otra vez. Falta anotar cuándo se despertó en medio.'});
-    if(v==null) return;
-    const prev=JSON.parse(JSON.stringify(o)), nu={id:newId(),type:'sleep',ts:now,end:null}; if(S.me) nu.who=S.me;
-    try{ await write('events',o.id,Object.assign({},o,{end:v})); await write('events',nu.id,nu); }catch(e){ return; }
-    toast('Se despertó a las '+hm(v)+' y se durmió otra vez a las '+hm(now),async()=>{ await remove('events',nu.id); await write('events',prev.id,prev); });
-  } else {
-    const last=S.events.find(e=>e.type==='sleep'&&e.end), from=last?last.end:now-12*36e5;
-    const v=await askGap({kind:'sleep',from,to:now,fromLabel:last?'Se despertó':'12 h atrás',toLabel:'Ahora',
-      intro:last?'Se despertó a las '+hm(last.end)+' y vas a registrar «Se despertó» otra vez. Falta anotar cuándo se durmió en medio.':'Vas a registrar «Se despertó», pero no hay un «Se durmió» antes. Elige cuándo se durmió (hasta 12 horas atrás).'});
-    if(v==null) return;
-    const nu={id:newId(),type:'sleep',ts:v,end:now}; if(S.me) nu.who=S.me;
-    try{ await write('events',nu.id,nu); }catch(e){ return; }
-    toast('Durmió de '+hm(v)+' a '+hm(now),()=>remove('events',nu.id));
-  }
+  const o=openSleep(), now=Date.now(), type=o?'durmio':'desperto', prevPt=sleepInfo().last;
+  const ev={id:newId(),type,ts:now}; if(S.me) ev.who=S.me;
+  try{ await write('events',ev.id,ev); }catch(e){ return; }
+  pushUndo(KW[type]+' a las '+hm(now),()=>remove('events',ev.id));
+  const need=prevPt?prevPt.type===type:type==='desperto';
+  if(!need){ toast(KW[type]+' a las '+hm(now)); return; }
+  const miss=otherSP(type), from=prevPt?prevPt.ts:now-12*36e5;
+  const v=await askGap({kind:miss==='desperto'?'wake':'sleep',from,to:now,fromLabel:prevPt?KW[prevPt.type]:'12 h atrás',toLabel:KW[type]+' (ahora)',
+    intro:prevPt?'Quedan dos «'+KW[type]+'» seguidos ('+hm(prevPt.ts)+' y ahora). Falta «'+KW[miss]+'» en medio.':'No hay un «Se durmió» antes. Elige cuándo se durmió (hasta 12 horas atrás).'});
+  if(v==null){ toast('Guardado. En el Historial verás un + para completar lo que falta.'); return; }
+  const g={id:newId(),type:miss,ts:v}; if(S.me) g.who=S.me;
+  try{ await write('events',g.id,g); }catch(e){ return; }
+  toast(KW[miss]+' a las '+hm(v)+' y '+KW[type]+' a las '+hm(now),()=>remove('events',g.id));
 }
-
-/* En el historial: cambiar un «Se durmió» por «Se despertó» o al revés */
-function sleepPoints(){
-  const pts=[]; S.events.filter(e=>e.type==='sleep').forEach(s=>{ pts.push({t:s.ts,k:'d',id:s.id}); if(s.end) pts.push({t:s.end,k:'w',id:s.id}); });
-  return pts.sort((a,b)=>a.t-b.t||(a.k==='d'?1:-1));
-}
-const KW={d:'Se durmió',w:'Se despertó'};
-function flipChooser(id){
-  const s=S.events.find(e=>e.id===id); if(!s) return;
-  const opt=(k,t)=>'<button type="button" class="flipopt" data-flipdo="'+esc(id)+'|'+k+'"><span class="fo-a">'+KW[k]+' · '+esc(hm(t))+'</span><span class="fo-arrow">'+ic('swap')+'</span><span class="fo-b">'+KW[k==='d'?'w':'d']+'</span></button>';
-  S.sheet={flip:true};
-  document.getElementById('sheetroot').innerHTML='<div class="back" id="back"><div class="sheet" role="dialog" aria-modal="true" aria-label="Cambiar sueño"><h2>Cambiar este sueño</h2>'
-    +'<p class="kphint">'+esc(dayLabel(s.ts))+'. Elige qué momento estaba mal anotado. Si al cambiarlo quedan dos iguales seguidos, te pediré el que falta en medio.</p>'
-    +opt('d',s.ts)+(s.end?opt('w',s.end):'')
-    +'<div class="acts"><button type="button" class="ghost" data-close="1">Cancelar</button></div></div></div>';
-}
-async function flipPoint(id,k){
-  const pts=sleepPoints(), i=pts.findIndex(p=>p.id===id&&p.k===k); if(i<0) return;
-  const p=pts[i], prev=pts[i-1], next=pts[i+1], nk=k==='d'?'w':'d', added=[];
-  const miss=x=>x==='w'?'d':'w';
-  if(prev?prev.k===nk:nk==='w'){
-    const mk=miss(nk), from=prev?prev.t:p.t-12*36e5;
-    const v=await askGap({kind:mk==='w'?'wake':'sleep',from,to:p.t,fromLabel:prev?KW[prev.k]:'12 h antes',toLabel:KW[nk]+' (cambiado)',
-      intro:prev?'Al cambiarlo quedan dos «'+KW[nk]+'» seguidos ('+hm(prev.t)+' y '+hm(p.t)+'). Falta anotar «'+KW[mk]+'» en medio.':'Antes de este «Se despertó» no hay un «Se durmió». Elige cuándo se durmió.',saveLabel:next&&next.k===nk?'Siguiente':'Guardar'});
-    if(v==null) return; added.push({t:v,k:mk});
-  }
-  if(next&&next.k===nk){
-    const mk=miss(nk);
-    const v=await askGap({kind:mk==='w'?'wake':'sleep',from:p.t,to:next.t,fromLabel:KW[nk]+' (cambiado)',toLabel:KW[next.k],
-      intro:'Al cambiarlo quedan dos «'+KW[nk]+'» seguidos ('+hm(p.t)+' y '+hm(next.t)+'). Falta anotar «'+KW[mk]+'» en medio.'});
-    if(v==null) return; added.push({t:v,k:mk});
-  }
-  const ids=new Set([p.id,prev&&prev.id,next&&next.id].filter(Boolean));
-  const set=pts.filter(q=>ids.has(q.id)).map(q=>({t:q.t,k:q===p?nk:q.k})).concat(added).sort((a,b)=>a.t-b.t||(a.k==='d'?1:-1));
-  const per=[]; let cur=null;
-  set.forEach(q=>{ if(q.k==='d'){ if(cur==null) cur=q.t; } else if(cur!=null){ per.push({ts:cur,end:q.t}); cur=null; } });
-  if(cur!=null) per.push({ts:cur,end:null});
-  const olds=[...ids].map(x=>JSON.parse(JSON.stringify(S.events.find(e=>e.id===x)))).filter(Boolean);
-  const news=per.map(pp=>{ const o={id:newId(),type:'sleep',ts:pp.ts,end:pp.end}; if(S.me) o.who=S.me; return o; });
-  try{ for(const o of olds) await remove('events',o.id); for(const n of news) await write('events',n.id,n); }
-  catch(e){ toast('No se pudo cambiar. Intenta de nuevo.'); return; }
-  toast('Sueño corregido: '+news.map(n=>hm(n.ts)+'–'+(n.end?hm(n.end):'ahora')).join(', '),async()=>{ for(const n of news) await remove('events',n.id); for(const o of olds) await write('events',o.id,o); });
+let migrating=false;
+async function migrateLegacy(){
+  const legacy=S.events.filter(e=>e.type==='sleep'); if(!legacy.length||migrating||S.readonly) return;
+  migrating=true;
+  try{
+    for(const s of legacy){
+      const d={type:'durmio',ts:s.ts}; if(s.who) d.who=s.who; if(s.note) d.note=s.note;
+      const w=s.end?Object.assign({type:'desperto',ts:s.end},s.who?{who:s.who}:{}):null;
+      if(S.db){ await S.db.collection('events').doc(s.id+'-d').set(d); if(w) await S.db.collection('events').doc(s.id+'-w').set(w); await S.db.collection('events').doc(s.id).delete(); }
+      else { S.events=S.events.filter(x=>x.id!==s.id); S.events.push(Object.assign({id:s.id+'-d'},d)); if(w) S.events.push(Object.assign({id:s.id+'-w'},w)); }
+    }
+    if(!S.db){ sortAll(); saveLocal(); render(); }
+  }catch(e){}
+  migrating=false;
 }
 
 /* ---------- confirmación para todo borrado ---------- */
@@ -1159,8 +1188,9 @@ async function bulkDelete(list,label){
 function dayStats(ds){
   const de=ds+DAY, r={sleepMs:0,sleeps:0,breast:0,breastMs:0,bottle:0,ml:0,solid:0,diapers:0,pipi:0,popo:0,meds:0,fev:null};
   const now=Date.now();
+  for(const p of sleepInfo().periods){ const o=Math.min(p.end||now,de)-Math.max(p.ts,ds); if(o>0){ r.sleepMs+=o; r.sleeps++; } }
   for(const e of S.events){
-    if(e.type==='sleep'){ const o=Math.min(e.end||now,de)-Math.max(e.ts,ds); if(o>0){ r.sleepMs+=o; r.sleeps++; } continue; }
+    if(e.type==='sleep'||SP[e.type]) continue;
     if(e.ts<ds||e.ts>=de) continue;
     if(e.type==='breast'){ r.breast++; r.breastMs+=(e.end||now)-e.ts; }
     else if(e.type==='bottle'){ r.bottle++; r.ml+=e.ml||0; }
@@ -1177,7 +1207,7 @@ function fmtH(ms){ const m=Math.round(ms/60000); return Math.floor(m/60)+' h '+S
 /* ---------- vistas ---------- */
 function viewHoy(){
   const now=Date.now(), os=openSleep(), ob=openBreast(), t=dayStats(startOfDay(now));
-  const lastEnd=S.events.find(e=>e.type==='sleep'&&e.end);
+  const lastEnd=lastWakeObj();
   const lastFeed=S.events.find(e=>FEED.includes(e.type)&&(e.type!=='breast'||true));
   const feedTs=lastFeed?(lastFeed.type==='breast'&&lastFeed.end?lastFeed.end:lastFeed.ts):null;
   const tile=(k,v,s)=>'<div class="tile"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>';
@@ -1204,7 +1234,7 @@ function viewHoy(){
   +'<button class="act c-health" data-act="fever">'+ic('therm')+'<span>Fiebre</span></button>'
   +'<button class="act c-health" data-act="vaccine">'+ic('syringe')+'<span>Vacuna</span></button></div>'
   +'<div class="sec">Últimos registros · toca el lápiz para cambiar</div>'
-  +(recent.length?'<div class="list">'+recent.map(rowHTML).join('')+'</div>':'<div class="empty">Aún no hay registros. Toca un botón para empezar.</div>');
+  +(recent.length?'<div class="list">'+recent.map(e=>rowHTML(e)+gapRowFor(e)).join('')+'</div>':'<div class="empty">Aún no hay registros. Toca un botón para empezar.</div>');
 }
 function viewHist(){
   if(!S.events.length) return '<h2 class="dayh">Historial</h2><div class="empty">Aquí aparecerán todos los registros, del más reciente al más antiguo.</div>';
@@ -1212,7 +1242,7 @@ function viewHist(){
   for(const e of S.events){
     const d=startOfDay(e.ts);
     if(d!==cur){ if(cur!==null) out+='</div>'; cur=d; out+='<div class="dayh">'+esc(dayLabel(e.ts))+'</div><div class="list">'; }
-    out+=rowHTML(e);
+    out+=rowHTML(e)+gapRowFor(e);
   }
   return out+'</div><p class="note">Se muestran los últimos 1000 registros. Toca el lápiz (o el registro) para cambiar cualquier dato: hora, cantidad, tipo, lado o nota. El bote de basura lo borra.</p>';
 }
@@ -1343,7 +1373,7 @@ function growthInsights(m){
 
 /* ---------- análisis de actividad ---------- */
 function hasRec(ds){ const de=ds+DAY, now=Date.now();
-  return S.events.some(e=>(e.ts>=ds&&e.ts<de)||(e.type==='sleep'&&e.ts<de&&(e.end||now)>ds)); }
+  return S.events.some(e=>e.ts>=ds&&e.ts<de)||sleepInfo().periods.some(p=>p.ts<de&&(p.end||now)>ds); }
 const median=a=>{ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y), k=s.length>>1; return s.length%2?s[k]:(s[k-1]+s[k])/2; };
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function fmtTOD(mins){ const d=new Date(); d.setHours(0,mins,0,0); return hm(d.getTime()); }
@@ -1378,7 +1408,7 @@ function analyze(){
     if(ps.length){ const pa=mean(ps.map(x=>x.sleepMs)); if(pa>0){ const dm=Math.round((avgSleep-pa)/60000); if(Math.abs(dm)>=10) d+=' Frente a la semana anterior: '+(dm>0?'+':'−')+fmtDur(Math.abs(dm)*60000)+' por día.'; } }
     R.sleep.push({l,t:'Duerme en promedio '+fmtH(avgSleep)+' al día',d:d.trim()+' ('+dTxt+').'});
   }
-  const sess=S.events.filter(e=>e.type==='sleep'&&e.end&&inR(e));
+  const sess=sleepInfo().periods.filter(p=>p.end&&inR(p));
   if(sess.length){
     const lg=sess.reduce((a,b)=>(b.end-b.ts)>(a.end-a.ts)?b:a);
     R.sleep.push({l:'info',t:'Su sueño más largo seguido: '+fmtDur(lg.end-lg.ts),d:dayLabel(lg.ts)+', desde las '+hm(lg.ts)+'. Promedio de cada periodo de sueño: '+fmtDur(mean(sess.map(s=>s.end-s.ts)))+'.'});
@@ -1457,7 +1487,7 @@ function homeInsights(){
   if(fev) out.push({l:'warn',t:'Fiebre de '+nf(fev.temp)+' °C '+dayLabel(fev.ts).toLowerCase()+' a las '+hm(fev.ts),d:aNow!=null&&aNow<3?'En menores de 3 meses, 38 °C o más es motivo para consultar al médico de inmediato.':'Vigila cómo sigue y consulta si te preocupa.'});
   const os=openSleep();
   if(!os){
-    const lastEnd=S.events.find(e=>e.type==='sleep'&&e.end), ww=wakeWindow(aNow);
+    const lastEnd=lastWakeObj(), ww=wakeWindow(aNow);
     if(lastEnd&&ww){ const m=(now-lastEnd.end)/60000;
       out.push({l:m>ww[1]?'warn':'info',t:'Lleva despierto '+fmtDur(now-lastEnd.end),d:'A su edad, el tiempo despierto entre sueños suele ser de '+fmtDur(ww[0]*60000)+' a '+fmtDur(ww[1]*60000)+'. '+(m>ww[1]?'Puede estar cansado: busca señales de sueño.':(m>=ww[0]?'Pronto puede tener sueño.':''))}); }
   }
@@ -1560,6 +1590,7 @@ function viewCre(){
 }
 
 function render(){
+  spInvalidate();
   const p=S.profile, titles={hoy:'hoy',hist:'hist',res:'res',cre:'cre'};
   let banner='';
   if(S.local) banner='<div class="banner">Por ahora los registros se guardan solo en este celular. La sincronización entre celulares y las notificaciones se activan en el siguiente paso.</div>';
@@ -1569,7 +1600,7 @@ function render(){
   const nav=[['hoy','home','Hoy'],['hist','list','Historial'],['res','bars','Análisis'],['cre','grow','Crecimiento']];
   $('#app').innerHTML='<div class="top"><div><h1>'+esc(p.name||'Luciano')+'</h1><div class="age">'+esc(ageText())+'</div>'+(S.db&&S.synced&&!S.slow?'<div class="live"><i></i>En vivo con los otros celulares</div>':'')+'</div><div class="hbtns">'+(function(){ const u=S.undo[S.undo.length-1]; return '<button class="iconbtn undobtn'+(u?'':' off')+'" data-act="undo" aria-label="'+esc(u?'Deshacer: '+u.label:'Nada para deshacer')+'"'+(u?'':' aria-disabled="true"')+'>'+ic('undo')+(S.undo.length?'<span class="badge">'+S.undo.length+'</span>':'')+'</button>'; })()+'<button class="iconbtn" data-act="skins" aria-label="Cambiar apariencia">'+ic('palette')+'</button><button class="iconbtn" data-act="settings" aria-label="Datos del bebé">'+ic('gear')+'</button></div></div>'
    +banner+view
-   +'<nav class="nav" aria-label="Secciones"><div>'+nav.map(n=>'<button data-tab="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[1])+n[2]+'</button>').join('')+'</div></nav>';
+   +'<nav class="nav'+(S.navHidden?' hide':'')+'" aria-label="Secciones"><div>'+nav.map(n=>'<button data-tab="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[1])+n[2]+'</button>').join('')+'</div></nav>';
   tick();
   if(S.sheet&&S.sheet.rz) renderRZ();
 }
@@ -1631,8 +1662,8 @@ document.addEventListener('click',async ev=>{
   if(t.dataset.gapadj&&S.gap){ const g=S.gap; g.v=Math.min(g.to,Math.max(g.from,g.v+Number(t.dataset.gapadj)*60000)); gapUpdate(); return; }
   if(t.dataset.gapsave&&S.gap){ gapSave(); return; }
   if(t.dataset.newsall!==undefined&&S.sheet&&S.sheet.news){ showNews(t.dataset.newsall||'',true); return; }
-  if(t.dataset.flip){ flipChooser(t.dataset.flip); return; }
-  if(t.dataset.flipdo){ const [fid,fk]=t.dataset.flipdo.split('|'); S.sheet=null; document.getElementById('sheetroot').innerHTML=''; flipPoint(fid,fk); return; }
+  if(t.dataset.flip){ flipPoint(t.dataset.flip); return; }
+  if(t.dataset.gapfill){ fillGap(t.dataset.gapfill); return; }
   if(t.dataset.rzmode){ S.rz.mode=t.dataset.rzmode; S.rz.all=false; renderRZ(); return; }
   if(t.dataset.rzhow){ S.rz.how=t.dataset.rzhow; S.rz.act=S.rz.how==='fecha'?'d':'h'; S.rz.fresh=true; S.rz.all=false; renderRZ(); return; }
   if(t.dataset.kf){ S.rz.act=t.dataset.kf; S.rz.fresh=true; renderRZ(); return; }
@@ -1744,9 +1775,15 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.26-5';
+const APP_VERSION='2026.11.26-6';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.26-6','26 de noviembre',[
+    ['moon','En el Historial, «Se durmió» y «Se despertó» ahora son registros separados.',3],
+    ['swap','Las flechas de cada registro de sueño lo cambian al instante entre «Se durmió» y «Se despertó».',3],
+    ['plus','Si quedan dos iguales seguidos, aparece un + entre ellos que abre la barra para poner la hora que falta.',3],
+    ['list','La barra de navegación de abajo se oculta mientras haces scroll.',2],
+    ['list','El scroll es más fluido.',2]]],
   ['2026.11.26-5','26 de noviembre',[
     ['heart','Cuando se juntan muchos cambios, este letrero muestra solo los más importantes; puedes ver todos con un botón.',2],
     ['list','Cada novedad indica su importancia: Importante, Mejora o Detalle.',1]]],
@@ -1806,6 +1843,22 @@ async function checkUpdate(){
   return false;
 }
 
+/* ---------- scroll: ocultar la barra de navegación y pausar efectos ---------- */
+(function(){
+  let t=null, raf=false;
+  window.addEventListener('scroll',()=>{
+    if(raf) return; raf=true;
+    requestAnimationFrame(()=>{
+      raf=false;
+      const nav=document.querySelector('.nav');
+      if(window.scrollY>10&&!S.navHidden){ S.navHidden=true; if(nav) nav.classList.add('hide'); }
+      document.documentElement.classList.add('scrolling');
+      clearTimeout(t);
+      t=setTimeout(()=>{ S.navHidden=false; const n=document.querySelector('.nav'); if(n) n.classList.remove('hide'); document.documentElement.classList.remove('scrolling'); },700);
+    });
+  },{passive:true});
+})();
+
 /* ---------- jalar hacia abajo para actualizar ---------- */
 async function refreshAll(){
   if(S.db){
@@ -1823,18 +1876,20 @@ async function refreshAll(){
   const el=document.getElementById('ptr'), TH=75, MAX=120;
   let y0=null, dy=0, busy=false;
   const set=(d,o)=>{ el.style.transform='translateY('+(d-50)+'px)'; el.style.opacity=o; el.querySelector('svg').style.transform=busy?'':'rotate('+(d*3)+'deg)'; };
-  document.addEventListener('touchstart',e=>{
-    if(busy||S.sheet||window.scrollY>0||e.touches.length!==1){ y0=null; return; }
-    y0=e.touches[0].clientY; dy=0; el.classList.remove('anim');
-  },{passive:true});
-  document.addEventListener('touchmove',e=>{
+  const onMove=e=>{
     if(y0==null) return;
     const d=e.touches[0].clientY-y0;
-    if(d<=0||window.scrollY>0){ dy=0; set(0,0); return; }
+    if(d<=0||window.scrollY>0){ dy=0; set(0,0); if(d<-6){ y0=null; document.removeEventListener('touchmove',onMove); } return; }
     dy=Math.min(MAX,d*0.5); set(dy,Math.min(1,dy/TH));
     if(e.cancelable) e.preventDefault();
-  },{passive:false});
+  };
+  document.addEventListener('touchstart',e=>{
+    if(busy||S.sheet||window.scrollY>0||e.touches.length!==1||e.target.closest('.sheet,.cbox,input')){ y0=null; return; }
+    y0=e.touches[0].clientY; dy=0; el.classList.remove('anim');
+    document.addEventListener('touchmove',onMove,{passive:false});
+  },{passive:true});
   document.addEventListener('touchend',async()=>{
+    document.removeEventListener('touchmove',onMove);
     if(y0==null) return; y0=null; el.classList.add('anim');
     if(dy<TH){ set(0,0); return; }
     busy=true; el.classList.add('spin'); set(70,1);
