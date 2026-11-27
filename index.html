@@ -137,7 +137,7 @@ html.scrolled .top .iconbtn{width:38px;height:38px}
 .fld label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
 .fld input[type=text],.fld input[type=number],.fld input[type=date],.fld input[type=datetime-local]{width:100%;min-height:50px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:10px 12px;font:inherit;font-size:17px}
 .acts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);width:min(380px,calc(100% - 32px));justify-content:space-between;bottom:90px;z-index:30;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;animation:toastin .32s cubic-bezier(.2,1.2,.4,1) both;transition:transform .25s ease,opacity .25s ease;position:fixed;left:50%;transform:translateX(-50%);width:min(380px,calc(100% - 32px));justify-content:space-between;bottom:90px;z-index:30;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .toast button{border:0;background:none;color:inherit;font-weight:700;text-decoration:underline;padding:6px 4px;min-height:36px}
 .growthlist .row .dot{--c:var(--grow)}
 .mt{margin-top:12px}
@@ -174,6 +174,29 @@ html.scrolled .top .iconbtn{width:38px;height:38px}
 .dc i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--lc);margin-top:6px}
 .dc-sum{font-weight:700}
 .act.big.override{outline:3px dashed color-mix(in srgb,var(--c) 70%,transparent);outline-offset:3px}
+.toast.dragging{transition:none;cursor:grabbing}
+.toast.gone{transform:translate(-50%,160%)!important;opacity:0!important}
+.toast::before{content:"";position:absolute;top:5px;left:50%;width:34px;height:4px;margin-left:-17px;border-radius:2px;background:currentColor;opacity:.3}
+@keyframes toastin{from{transform:translate(-50%,160%);opacity:0}}
+.wheelwrap{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;height:200px;perspective:600px;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;overflow:hidden}
+.wheel{user-select:none;-webkit-user-select:none;touch-action:pan-y;height:200px;width:92px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;outline:none;cursor:grab;transform-style:preserve-3d;overscroll-behavior:contain}
+.wheel::-webkit-scrollbar{display:none}
+.wheel.drag{scroll-snap-type:none;cursor:grabbing}
+.wpad{height:80px}
+.witem{height:40px;display:grid;place-items:center;scroll-snap-align:center;font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;backface-visibility:hidden}
+.witem.sel{color:var(--ink)}
+.wsep{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--ink);z-index:1}
+.wband{position:absolute;left:12px;right:12px;top:80px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1.5px solid color-mix(in srgb,var(--accent) 40%,transparent);pointer-events:none}
+.wheelwrap::before,.wheelwrap::after{content:"";position:absolute;left:0;right:0;height:70px;z-index:2;pointer-events:none}
+.wheelwrap::before{top:0;background:linear-gradient(var(--surface),transparent)}
+.wheelwrap::after{bottom:0;background:linear-gradient(transparent,var(--surface))}
+.wheel:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;border-radius:12px}
+.wdate{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--muted)}
+.wdate span{}
+.wdbtn{width:28px;height:28px;border:0;background:none;color:var(--muted);display:grid;place-items:center;padding:0;border-radius:8px}
+.wdbtn .ic{width:15px;height:15px}
+.wdin{display:none;min-height:40px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:4px 8px;font:inherit;font-size:14px}
+.wdin.show{display:block}
 .gapends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
 .gapends b{display:block;color:var(--ink);font-size:13px}
 .gapfine{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
@@ -636,6 +659,7 @@ const ICONS = {
   grow:'<path d="M3 20h18M6 20V13M12 20V8M18 20V3"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   left:'<path d="M15 18l-6-6 6-6"/>', right:'<path d="M9 18l6-6-6-6"/>',
+  calendar:'<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
   pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
@@ -863,6 +887,7 @@ function quickDiaper(kind){ addEvent({type:'diaper',kind,ts:Date.now()},DIAP[kin
 function fld(f){
   const id='f_'+f.id;
   if(f.t==='seg') return '<div class="fld"><label>'+f.l+'</label><div class="seg" role="group" aria-label="'+esc(f.l)+'" data-seg="'+f.id+'">'+f.o.map(([v,l])=>'<button type="button" data-v="'+v+'" class="'+(v===f.v?'on':'')+'">'+l+'</button>').join('')+'</div></div>';
+  if(f.t==='wheel') return wheelHTML(f);
   if(f.t==='skins') return '<div class="skins">'+SKINS.map(k=>'<button type="button" class="skinbtn'+(k.id===S.skin?' on':'')+'" data-skinpick="'+k.id+'" aria-pressed="'+(k.id===S.skin)+'"><span class="sw" style="background:conic-gradient('+k.c[0]+' 0 25%,'+k.c[1]+' 0 50%,'+k.c[2]+' 0 75%,'+k.c[3]+' 0);border-color:'+k.ring+'"></span><b>'+esc(k.name)+'</b><small>'+esc(k.d)+'</small></button>').join('')+'</div><button type="button" class="switchrow" data-animtoggle="1" role="switch" aria-checked="'+S.anim+'"><span><b>Animaciones</b><small>Brillos, colores y movimientos suaves del fondo</small></span><span class="switch'+(S.anim?' on':'')+'"><i></i></span></button>';
   if(f.t==='chips') return '<div class="chips">'+f.o.map(v=>'<button type="button" data-fill="f_'+f.id+'" data-v="'+v+'">'+v+'</button>').join('')+'</div>';
   const extra=f.t==='number'?' inputmode="decimal" step="'+(f.step||'any')+'" min="0"':'';
@@ -871,10 +896,59 @@ function fld(f){
 function openSheet(cfg){
   S.sheet=cfg;
   $('#sheetroot').innerHTML='<div class="back" id="back"><form class="sheet" id="sheetform" role="dialog" aria-modal="true" aria-label="'+esc(cfg.title)+'"><h2>'+esc(cfg.title)+'</h2>'+cfg.fields.map(fld).join('')+'<div class="acts"><button class="primary" type="submit">'+(cfg.saveLabel||'Guardar')+'</button>'+(cfg.noCancel?'':'<button class="ghost" type="button" data-close="1">Cancelar</button>')+(cfg.onDelete?'<button class="danger" type="button" data-del="1">Eliminar</button>':'')+(cfg.extra||'')+'</div></form></div>';
-  const first=$('#sheetform input'); if(first&&!cfg.noFocus) setTimeout(()=>first.focus({preventScroll:true}),50);
+  initWheels($('#sheetroot'));
+  const first=$('#sheetform input:not(.wdin)'); if(first&&!cfg.noFocus&&!$('#sheetform .wheel')) setTimeout(()=>first.focus({preventScroll:true}),50);
 }
 function closeSheet(){ if(S.gap&&S.gap.resolve){ const r=S.gap.resolve; S.gap=null; r(null); } S.sheet=null; $('#sheetroot').innerHTML=''; }
+/* ---------- rueda de hora (cilindro) ---------- */
+const WH=40;
+const capFirst=x=>x.charAt(0).toUpperCase()+x.slice(1);
+function wheelHTML(f){
+  const d=new Date(f.v), p=n=>String(n).padStart(2,'0');
+  const col=(c,n,sel)=>'<div class="wheel" data-col="'+c+'" data-sel="'+sel+'" tabindex="0" role="listbox" aria-label="'+(c==='h'?'Hora':'Minutos')+'"><div class="wpad"></div>'+Array.from({length:n},(_,i)=>'<div class="witem" role="option">'+p(i)+'</div>').join('')+'<div class="wpad"></div></div>';
+  const ymd=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  return '<div class="fld"><label>'+(f.l||'Hora')+'</label>'
+   +'<div class="wheelwrap" data-wheel="'+f.id+'">'+col('h',24,d.getHours())+'<span class="wsep">:</span>'+col('m',60,d.getMinutes())+'<div class="wband"></div></div>'
+   +'<div class="wdate"><span id="wdtxt_'+f.id+'">'+esc(capFirst(new Date(d).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})))+'</span>'
+   +'<button type="button" class="wdbtn" data-wdate="'+f.id+'" aria-label="Cambiar la fecha">'+ic('calendar')+'</button>'
+   +'<input type="date" id="f_'+f.id+'_date" class="wdin" value="'+ymd+'" aria-label="Fecha"></div></div>';
+}
+function wheelPaint(w){
+  const c=w.scrollTop+w.clientHeight/2;
+  w.querySelectorAll('.witem').forEach((it,i)=>{
+    const off=(it.offsetTop+WH/2-c)/WH, a=Math.abs(off);
+    it.style.transform='rotateX('+(-off*20).toFixed(1)+'deg) scale('+(1-Math.min(a,3)*0.06).toFixed(3)+')';
+    it.style.opacity=Math.max(0.15,1-a*0.3).toFixed(2);
+    it.classList.toggle('sel',a<0.5);
+  });
+}
+function initWheels(root){
+  root.querySelectorAll('.wheel').forEach(w=>{
+    w.scrollTop=Number(w.dataset.sel)*WH; wheelPaint(w);
+    let raf=false;
+    w.addEventListener('scroll',()=>{ if(raf) return; raf=true; requestAnimationFrame(()=>{ raf=false; wheelPaint(w); }); },{passive:true});
+    // arrastre con mouse (en el celular el dedo ya desplaza la rueda)
+    let y0=null, s0=0;
+    w.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse') return; e.preventDefault(); y0=e.clientY; s0=w.scrollTop; w.setPointerCapture(e.pointerId); w.classList.add('drag'); });
+    w.addEventListener('pointermove',e=>{ if(y0==null) return; w.scrollTop=s0-(e.clientY-y0); });
+    const end=()=>{ if(y0==null) return; y0=null; w.classList.remove('drag'); w.scrollTo({top:Math.round(w.scrollTop/WH)*WH,behavior:'smooth'}); };
+    w.addEventListener('pointerup',end); w.addEventListener('pointercancel',end);
+    w.addEventListener('keydown',e=>{ if(e.key==='ArrowUp'||e.key==='ArrowDown'){ e.preventDefault(); w.scrollTo({top:(Math.round(w.scrollTop/WH)+(e.key==='ArrowDown'?1:-1))*WH,behavior:'smooth'}); } });
+  });
+  root.querySelectorAll('.wdin').forEach(inp=>inp.addEventListener('change',()=>{
+    const id=inp.id.replace(/^f_/,'').replace(/_date$/,''), t=document.getElementById('wdtxt_'+id);
+    if(t&&inp.value) t.textContent=capFirst(new Date(inp.value+'T12:00:00').toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'}));
+  }));
+}
+function wheelValue(id){
+  const box=document.querySelector('[data-wheel="'+id+'"]'); if(!box) return null;
+  const idx=c=>{ const w=box.querySelector('[data-col="'+c+'"]'); return Math.max(0,Math.min(c==='h'?23:59,Math.round(w.scrollTop/WH))); };
+  const d=document.getElementById('f_'+id+'_date').value, p=n=>String(n).padStart(2,'0');
+  return d+'T'+p(idx('h'))+':'+p(idx('m'));
+}
+
 function val(id){
+  const wv=wheelValue(id); if(wv!=null) return wv;
   const seg=document.querySelector('[data-seg="'+id+'"] .on'); if(seg) return seg.dataset.v;
   const el=document.getElementById('f_'+id); return el?el.value.trim():'';
 }
@@ -912,7 +986,7 @@ function eventSheet(type,e){
     build=()=>({type,ts:fromLocalInput(val('ts')),kind:val('kind')});
   } else if(type==='durmio'||type==='desperto'){
     title='Sueño';
-    fields=[{t:'seg',id:'stype',l:'Qué pasó',v:e.type,o:[['durmio','Se durmió'],['desperto','Se despertó']]},T()];
+    fields=[{t:'seg',id:'stype',l:'Qué pasó',v:e.type,o:[['durmio','Se durmió'],['desperto','Se despertó']]},{t:'wheel',id:'ts',l:'Hora · arrastra los números',v:e.ts}];
     build=()=>({type:val('stype'),ts:fromLocalInput(val('ts'))});
   } else if(type==='sleep'){
     title='Sueño';
@@ -1700,7 +1774,18 @@ function toast(msg,undo){
   const root=$('#toastroot'); clearTimeout(toastTimer);
   root.innerHTML='<div class="toast" role="status"><span>'+esc(msg)+'</span>'+(undo?'<button type="button" data-undo="1">Deshacer</button>':'')+'</div>';
   if(typeof undo==='function') pushUndo(msg,undo);
-  toastTimer=setTimeout(()=>{ root.innerHTML=''; },undo?6000:3500);
+  const ms=undo?6000:3500;
+  toastTimer=setTimeout(()=>dismissToast(),ms);
+  const el=root.querySelector('.toast'); let y0=null, dy=0;
+  el.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; y0=e.clientY; dy=0; el.setPointerCapture(e.pointerId); el.classList.add('dragging'); clearTimeout(toastTimer); });
+  el.addEventListener('pointermove',e=>{ if(y0==null) return; dy=e.clientY-y0; const d=dy<0?dy*0.25:dy; el.style.transform='translate(-50%,'+d+'px)'; el.style.opacity=String(Math.max(0,1-Math.max(0,dy)/140)); });
+  const end=()=>{ if(y0==null) return; y0=null; el.classList.remove('dragging');
+    if(dy>35) dismissToast(); else { el.style.transform=''; el.style.opacity=''; toastTimer=setTimeout(()=>dismissToast(),ms); } };
+  el.addEventListener('pointerup',end); el.addEventListener('pointercancel',end);
+}
+function dismissToast(){
+  const root=$('#toastroot'), el=root.querySelector('.toast'); if(!el) return;
+  el.style.transform=''; el.style.opacity=''; el.classList.add('gone'); setTimeout(()=>{ if(root.contains(el)) root.innerHTML=''; },260);
 }
 
 /* ---------- eventos de la interfaz ---------- */
@@ -1730,6 +1815,7 @@ document.addEventListener('click',async ev=>{
   if(t.dataset.gapadj&&S.gap){ const g=S.gap; g.v=Math.min(g.to,Math.max(g.from,g.v+Number(t.dataset.gapadj)*60000)); gapUpdate(); return; }
   if(t.dataset.gapsave&&S.gap){ gapSave(); return; }
   if(t.dataset.newsall!==undefined&&S.sheet&&S.sheet.news){ showNews(t.dataset.newsall||'',true); return; }
+  if(t.dataset.wdate){ const inp=document.getElementById('f_'+t.dataset.wdate+'_date'); if(inp){ inp.classList.add('show'); try{ inp.showPicker(); }catch(e){ inp.focus(); } } return; }
   if(t.dataset.flip){ flipPoint(t.dataset.flip); return; }
   if(t.dataset.gapfill){ fillGap(t.dataset.gapfill); return; }
   if(t.dataset.rzmode){ S.rz.mode=t.dataset.rzmode; S.rz.all=false; renderRZ(); return; }
@@ -1843,9 +1929,12 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.26-8';
+const APP_VERSION='2026.11.26-9';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.26-9','26 de noviembre',[
+    ['moon','Editar sueño: la hora se pone con ruedas de números que giran al arrastrarlas. La fecha se cambia con el ícono pequeño de calendario.',3],
+    ['list','Los avisos de abajo se quitan deslizándolos hacia abajo.',2]]],
   ['2026.11.26-8','26 de noviembre',[
     ['list','El Historial muestra conclusiones de cada día: resumen, comparación con su promedio, sueño más largo, alertas y vacunas o medicinas.',3],
     ['swap','«Cambiar a…» ahora voltea el botón grande de sueño; luego tocas el botón grande para registrar.',3]]],
@@ -1960,7 +2049,7 @@ async function refreshAll(){
     if(e.cancelable) e.preventDefault();
   };
   document.addEventListener('touchstart',e=>{
-    if(busy||S.sheet||window.scrollY>0||e.touches.length!==1||e.target.closest('.sheet,.cbox,input')){ y0=null; return; }
+    if(busy||S.sheet||window.scrollY>0||e.touches.length!==1||e.target.closest('.sheet,.cbox,input,.toast')){ y0=null; return; }
     y0=e.touches[0].clientY; dy=0; el.classList.remove('anim');
     document.addEventListener('touchmove',onMove,{passive:false});
   },{passive:true});
