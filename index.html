@@ -169,6 +169,11 @@ html.scrolled .top .iconbtn{width:38px;height:38px}
 .newslist li:nth-child(2){animation-delay:.08s}.newslist li:nth-child(3){animation-delay:.16s}
 .lvl{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--lc);background:color-mix(in srgb,var(--lc) 14%,transparent);border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
 .newslist .ic{color:var(--accent);width:20px;height:20px;margin-top:1px}
+.dayconc{display:flex;flex-direction:column;gap:6px;margin:-2px 0 10px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 7%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line))}
+.dc{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:var(--ink)}
+.dc i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--lc);margin-top:6px}
+.dc-sum{font-weight:700}
+.act.big.override{outline:3px dashed color-mix(in srgb,var(--c) 70%,transparent);outline-offset:3px}
 .gapends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
 .gapends b{display:block;color:var(--ink);font-size:13px}
 .gapfine{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
@@ -286,7 +291,7 @@ html[data-skin] body{background:transparent}
 /* ===== Skin: Retro pop ===== */
 :root[data-skin="retro"]{--bg:#FFF4D6;--surface:#FFFFFF;--ink:#111111;--muted:#444444;--line:#111111;--accent:#FF4F7B;--accent-ink:#111;--sleep:#8C74FF;--feed:#FF9F1C;--diaper:#14C38E;--health:#FF4F4F;--grow:#2EC4F1;--font-display:'Archivo Black',sans-serif;color-scheme:light}
 [data-skin="retro"] body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(rgba(17,17,17,.13) 1.2px,transparent 1.6px) 0 0/16px 16px,#FFF4D6}
-[data-skin="retro"] :is(.tile,.row,.stat,.card,.iconbtn,.seg button,.pill,.chips button,.ghost,.danger,.fld input,.kf,.kp button,.cbox,.dangerfill){border:2.5px solid #111;box-shadow:4px 4px 0 #111;border-radius:10px}
+[data-skin="retro"] :is(.dayconc,.tile,.row,.stat,.card,.iconbtn,.seg button,.pill,.chips button,.ghost,.danger,.fld input,.kf,.kp button,.cbox,.dangerfill){border:2.5px solid #111;box-shadow:4px 4px 0 #111;border-radius:10px}
 [data-skin="retro"] .act{border:2.5px solid #111;border-radius:12px;box-shadow:4px 4px 0 #111;background:color-mix(in srgb,var(--c) 32%,#fff)}
 [data-skin="retro"] .act.on{background:var(--c);color:#111;animation:none}
 [data-skin="retro"] .act .ic,[data-skin="retro"] .act.on .ic,[data-skin="retro"] .act.on small{color:#111}
@@ -1051,18 +1056,24 @@ async function flipPoint(id){
   const g=Object.values(sleepInfo().gaps).some(x=>x.b.id===id||(x.a&&x.a.id===id));
   toast('Cambiado a «'+KW[nt]+'»'+(g?'. Toca el + para completar lo que falta.':''),()=>write('events',id,prev));
 }
-async function toggleSleep(){
-  const o=openSleep(), now=Date.now();
-  if(o) addEvent({type:'desperto',ts:now},'Se despertó a las '+hm(now)+' · durmió '+fmtDur(now-o.ts));
-  else addEvent({type:'durmio',ts:now},'Se durmió a las '+hm(now));
+function sleepNatural(){ return openSleep()?'desperto':'durmio'; }
+function sleepShown(){ return S.sleepOverride||sleepNatural(); }
+function sleepAlt(){
+  const nat=sleepNatural(), cur=sleepShown(), nt=otherSP(cur);
+  S.sleepOverride=nt===nat?null:nt; render();
 }
-async function sleepAlt(){
-  const o=openSleep(), now=Date.now(), type=o?'durmio':'desperto', prevPt=sleepInfo().last;
+async function toggleSleep(){ const t=sleepShown(); S.sleepOverride=null; await registerSleep(t); }
+async function registerSleep(type){
+  const now=Date.now(), prevPt=sleepInfo().last, o=openSleep();
   const ev={id:newId(),type,ts:now}; if(S.me) ev.who=S.me;
+  const need=prevPt?prevPt.type===type:type==='desperto';
+  if(!need){
+    try{ await write('events',ev.id,ev); }catch(e){ return; }
+    toast(type==='desperto'&&o?'Se despertó a las '+hm(now)+' · durmió '+fmtDur(now-o.ts):KW[type]+' a las '+hm(now),()=>remove('events',ev.id));
+    return;
+  }
   try{ await write('events',ev.id,ev); }catch(e){ return; }
   pushUndo(KW[type]+' a las '+hm(now),()=>remove('events',ev.id));
-  const need=prevPt?prevPt.type===type:type==='desperto';
-  if(!need){ toast(KW[type]+' a las '+hm(now)); return; }
   const miss=otherSP(type), from=prevPt?prevPt.ts:now-12*36e5;
   const v=await askGap({kind:miss==='desperto'?'wake':'sleep',from,to:now,fromLabel:prevPt?KW[prevPt.type]:'12 h atrás',toLabel:KW[type]+' (ahora)',
     intro:prevPt?'Quedan dos «'+KW[type]+'» seguidos ('+hm(prevPt.ts)+' y ahora). Falta «'+KW[miss]+'» en medio.':'No hay un «Se durmió» antes. Elige cuándo se durmió (hasta 12 horas atrás).'});
@@ -1215,6 +1226,48 @@ function sleepH(ms){ return Math.round(ms/36e5*10)/10; }
 function fmtH(ms){ const m=Math.round(ms/60000); return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min'; }
 
 /* ---------- vistas ---------- */
+/* ---------- conclusiones de cada día (Historial) ---------- */
+function dayConclusions(ds){
+  const r=dayStats(ds), isToday=ds===startOfDay(Date.now()), aNow=ageAt(ds+DAY/2), out=[];
+  const prev=[]; for(let i=1;i<=7;i++){ const d=ds-i*DAY; if(hasRec(d)) prev.push(dayStats(d)); }
+  const avg=k=>prev.length?mean(prev.map(x=>x[k])):null;
+  // 1. Resumen del día
+  const parts=[];
+  if(r.sleepMs>0) parts.push('durmió '+fmtH(r.sleepMs));
+  if(r.feeds) parts.push(r.feeds+(r.feeds===1?' toma':' tomas')+(r.ml?' ('+r.ml+' ml de biberón)':''));
+  if(r.diapers) parts.push(r.diapers+(r.diapers===1?' pañal':' pañales'));
+  if(parts.length){ const t=parts.join(' · '); out.push({l:'info',t:(isToday?'Hasta ahora: ':'')+t.charAt(0).toUpperCase()+t.slice(1)}); }
+  // 2. Alertas
+  if(r.fev!=null&&r.fev>=38) out.push({l:'warn',t:'Tuvo fiebre: máxima de '+nf(r.fev)+' °C.'+(aNow!=null&&aNow<3?' En menores de 3 meses hay que consultar al médico.':'')});
+  if(!isToday&&r.diapers&&aNow!=null&&aNow>=0.25&&r.pipi<6) out.push({l:'warn',t:'Solo '+r.pipi+(r.pipi===1?' pañal mojado':' pañales mojados')+' (lo habitual son 6 o más). Revisa si faltó anotar alguno.'});
+  const de=ds+DAY, gaps=Object.values(sleepInfo().gaps).filter(g=>g.b.ts>=ds&&g.b.ts<de);
+  if(gaps.length) out.push({l:'warn',t:gaps.length===1?'Hay un sueño incompleto: toca el + para completarlo.':'Hay '+gaps.length+' sueños incompletos: toca los + para completarlos.'});
+  // 3. Comparación con su promedio de la semana anterior
+  if(!isToday&&prev.length>=2){
+    const as=avg('sleepMs'), af=avg('feeds'), ad=avg('diapers');
+    if(r.sleepMs>0&&as>0){ const dm=(r.sleepMs-as)/60000; if(Math.abs(dm)>=45) out.push({l:dm>0?'ok':'info',t:'Durmió '+fmtDur(Math.abs(dm)*60000)+(dm>0?' más':' menos')+' que su promedio de los días anteriores ('+fmtH(as)+').'}); }
+    if(r.feeds&&af>0){ const df=r.feeds-af; if(Math.abs(df)>=2) out.push({l:'info',t:'Comió '+Math.round(Math.abs(df))+(Math.round(Math.abs(df))===1?' vez':' veces')+(df>0?' más':' menos')+' que de costumbre (promedio '+nf(af)+').'}); }
+    if(r.diapers&&ad>0){ const dd=r.diapers-ad; if(Math.abs(dd)>=3) out.push({l:'info',t:(dd>0?'Más':'Menos')+' pañales que de costumbre (promedio '+nf(ad)+').'}); }
+  }
+  // 4. Sueño más largo del día
+  const ps=sleepInfo().periods.filter(p=>p.end&&p.ts>=ds&&p.ts<de);
+  if(ps.length){ const lg=ps.reduce((a,b)=>(b.end-b.ts)>(a.end-a.ts)?b:a); if(lg.end-lg.ts>=2*36e5) out.push({l:'ok',t:'Su sueño más largo: '+fmtDur(lg.end-lg.ts)+' seguidas, desde las '+hm(lg.ts)+'.'}); }
+  // 5. Salud y alimentos
+  const evs=S.events.filter(e=>e.ts>=ds&&e.ts<de);
+  const vac=evs.filter(e=>e.type==='vaccine').map(e=>e.name).filter(Boolean);
+  if(vac.length) out.push({l:'info',t:'Vacuna: '+vac.join(', ')+'.'});
+  const meds=[...new Set(evs.filter(e=>e.type==='med').map(e=>e.name).filter(Boolean))];
+  if(meds.length) out.push({l:'info',t:'Medicinas: '+meds.join(', ')+'.'});
+  const foods=[...new Set(evs.filter(e=>e.type==='solid').map(e=>(e.food||'').trim()).filter(Boolean))];
+  if(foods.length) out.push({l:'info',t:'Comió: '+foods.join(', ')+'.'});
+  // Prioridad: resumen, alertas, comparaciones y lo demás; máximo 5
+  return out.slice(0,5);
+}
+function concHTML(ds){
+  const c=dayConclusions(ds); if(!c.length) return '';
+  return '<div class="dayconc" aria-label="Conclusiones del día">'+c.map((x,i)=>'<div class="dc'+(i===0?' dc-sum':'')+'" style="--lc:var(--'+LVL[x.l][1]+')"><i></i><span>'+esc(x.t)+'</span></div>').join('')+'</div>';
+}
+
 function viewHoy(){
   const now=Date.now(), os=openSleep(), ob=openBreast(), t=dayStats(startOfDay(now));
   const lastEnd=lastWakeObj();
@@ -1230,8 +1283,10 @@ function viewHoy(){
   const recent=S.events.slice(0,6);
   return '<div class="status">'+sleepTile+feedTile+dayTile+'</div>'+insHTML(homeInsights())
   +'<div class="sec">Sueño</div>'
-  +'<button class="act big c-sleep'+(os?' on':'')+'" style="width:100%" data-act="sleep">'+ic(os?'sun':'moon')+'<span>'+(os?'Se despertó':'Se durmió')+'<small>'+(os?'Durmiendo hace <span class="tick" data-ts="'+os.ts+'" data-m="dur"></span>':'Un toque para registrar')+'</small></span></button>'
-  +'<button type="button" class="altbtn c-sleep" data-act="sleepalt">'+ic('swap')+'<span><b>Cambiar a «'+(os?'Se durmió':'Se despertó')+'»</b><small>'+(os?'Si se despertó y se volvió a dormir sin anotarlo':'Si se durmió y no lo anotaste')+'</small></span></button>'
+  +(()=>{ const sh=sleepShown(), ov=!!S.sleepOverride, w=sh==='desperto';
+    const sub=ov?'Cambiado: toca para registrar «'+KW[sh]+'»':(os?'Durmiendo hace <span class="tick" data-ts="'+os.ts+'" data-m="dur"></span>':'Un toque para registrar');
+    return '<button class="act big c-sleep'+(os?' on':'')+(ov?' override':'')+'" style="width:100%" data-act="sleep">'+ic(w?'sun':'moon')+'<span>'+KW[sh]+'<small>'+sub+'</small></span></button>'
+     +'<button type="button" class="altbtn c-sleep" data-act="sleepalt">'+ic('swap')+'<span><b>'+(ov?'Volver a «'+KW[otherSP(sh)]+'»':'Cambiar a «'+KW[otherSP(sh)]+'»')+'</b><small>'+(ov?'Deja el botón como estaba':(os?'Si se despertó y se volvió a dormir sin anotarlo':'Si se durmió y no lo anotaste'))+'</small></span></button>'; })()
   +'<div class="sec">Comida</div><div class="grid g2">'+side('izq','izquierdo')+side('der','derecho')
   +'<button class="act c-feed" data-act="bottle">'+ic('bottle')+'<span>Biberón</span><small>fórmula o leche materna</small></button>'
   +'<button class="act c-feed" data-act="solid">'+ic('spoon')+'<span>Sólidos</span><small>papillas y más</small></button></div>'
@@ -1251,7 +1306,7 @@ function viewHist(){
   let out='<h2 class="dayh" style="margin-top:4px">Historial</h2>', cur=null;
   for(const e of S.events){
     const d=startOfDay(e.ts);
-    if(d!==cur){ if(cur!==null) out+='</div>'; cur=d; out+='<div class="dayh">'+esc(dayLabel(e.ts))+'</div><div class="list">'; }
+    if(d!==cur){ if(cur!==null) out+='</div>'; cur=d; out+='<div class="dayh">'+esc(dayLabel(e.ts))+'</div>'+concHTML(d)+'<div class="list">'; }
     out+=rowHTML(e)+gapRowFor(e);
   }
   return out+'</div><p class="note">Se muestran los últimos 1000 registros. Toca el lápiz (o el registro) para cambiar cualquier dato: hora, cantidad, tipo, lado o nota. El bote de basura lo borra.</p>';
@@ -1788,9 +1843,12 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.26-7';
+const APP_VERSION='2026.11.26-8';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.26-8','26 de noviembre',[
+    ['list','El Historial muestra conclusiones de cada día: resumen, comparación con su promedio, sueño más largo, alertas y vacunas o medicinas.',3],
+    ['swap','«Cambiar a…» ahora voltea el botón grande de sueño; luego tocas el botón grande para registrar.',3]]],
   ['2026.11.26-7','26 de noviembre',[
     ['list','La parte de arriba queda fija al hacer scroll, con un resumen: dormido o despierto y hace cuánto comió.',2],
     ['list','Ya no aparece el letrero de novedades la primera vez que instalas la app.',1]]],
