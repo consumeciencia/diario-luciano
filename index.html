@@ -43,7 +43,17 @@ svg{display:block}
 .ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
 #app{max-width:480px;margin:0 auto;padding:16px 16px 104px}
 h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
-.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:-16px -16px 14px;padding:16px 16px 10px;position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:padding .2s ease,box-shadow .2s ease}
+.topname{min-width:0;flex:1}
+.top h1{transition:font-size .2s ease}
+.ministat{display:none;gap:6px;flex-wrap:wrap;margin-top:4px}
+.mchip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:3px 9px 3px 7px;border-radius:999px;background:color-mix(in srgb,var(--c) 15%,var(--surface));color:var(--ink);font-variant-numeric:tabular-nums}
+.mchip .ic{width:15px;height:15px;color:var(--c)}
+html.scrolled .top{padding-top:10px;padding-bottom:8px;box-shadow:0 6px 18px rgba(0,0,0,.08);border-bottom:1px solid var(--line)}
+html.scrolled .top h1{font-size:21px}
+html.scrolled .top .age,html.scrolled .top .live{display:none}
+html.scrolled .ministat{display:flex}
+html.scrolled .top .iconbtn{width:38px;height:38px}
 .top h1{font-size:28px;line-height:1.1}
 .top .age{color:var(--muted);font-weight:500;margin-top:2px}
 .iconbtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
@@ -1598,7 +1608,10 @@ function render(){
   else if(S.slow) banner='<div class="banner">No se puede conectar todavía. Lo que ves puede estar desactualizado.</div>';
   const view={hoy:viewHoy,hist:viewHist,res:viewRes,cre:viewCre}[S.tab]();
   const nav=[['hoy','home','Hoy'],['hist','list','Historial'],['res','bars','Análisis'],['cre','grow','Crecimiento']];
-  $('#app').innerHTML='<div class="top"><div><h1>'+esc(p.name||'Luciano')+'</h1><div class="age">'+esc(ageText())+'</div>'+(S.db&&S.synced&&!S.slow?'<div class="live"><i></i>En vivo con los otros celulares</div>':'')+'</div><div class="hbtns">'+(function(){ const u=S.undo[S.undo.length-1]; return '<button class="iconbtn undobtn'+(u?'':' off')+'" data-act="undo" aria-label="'+esc(u?'Deshacer: '+u.label:'Nada para deshacer')+'"'+(u?'':' aria-disabled="true"')+'>'+ic('undo')+(S.undo.length?'<span class="badge">'+S.undo.length+'</span>':'')+'</button>'; })()+'<button class="iconbtn" data-act="skins" aria-label="Cambiar apariencia">'+ic('palette')+'</button><button class="iconbtn" data-act="settings" aria-label="Datos del bebé">'+ic('gear')+'</button></div></div>'
+  const _os=openSleep(), _lw=lastWakeObj(), _lf=S.events.find(e=>e.type==='breast'||e.type==='bottle'||e.type==='solid');
+  const mini='<div class="ministat"><span class="mchip c-sleep">'+ic(_os?'moon':'sun')+(_os?'Dormido <span class="tick" data-ts="'+_os.ts+'" data-m="dur"></span>':(_lw?'Despierto <span class="tick" data-ts="'+_lw.end+'" data-m="dur"></span>':'Despierto'))+'</span>'
+    +(_lf?'<span class="mchip c-feed">'+ic('bottle')+'Comió <span class="tick" data-ts="'+_lf.ts+'" data-m="since"></span></span>':'')+'</div>';
+  $('#app').innerHTML='<div class="top"><div class="topname"><h1>'+esc(p.name||'Luciano')+'</h1><div class="age">'+esc(ageText())+'</div>'+mini+(S.db&&S.synced&&!S.slow?'<div class="live"><i></i>En vivo con los otros celulares</div>':'')+'</div><div class="hbtns">'+(function(){ const u=S.undo[S.undo.length-1]; return '<button class="iconbtn undobtn'+(u?'':' off')+'" data-act="undo" aria-label="'+esc(u?'Deshacer: '+u.label:'Nada para deshacer')+'"'+(u?'':' aria-disabled="true"')+'>'+ic('undo')+(S.undo.length?'<span class="badge">'+S.undo.length+'</span>':'')+'</button>'; })()+'<button class="iconbtn" data-act="skins" aria-label="Cambiar apariencia">'+ic('palette')+'</button><button class="iconbtn" data-act="settings" aria-label="Datos del bebé">'+ic('gear')+'</button></div></div>'
    +banner+view
    +'<nav class="nav'+(S.navHidden?' hide':'')+'" aria-label="Secciones"><div>'+nav.map(n=>'<button data-tab="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[1])+n[2]+'</button>').join('')+'</div></nav>';
   tick();
@@ -1775,9 +1788,12 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.26-6';
+const APP_VERSION='2026.11.26-7';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.26-7','26 de noviembre',[
+    ['list','La parte de arriba queda fija al hacer scroll, con un resumen: dormido o despierto y hace cuánto comió.',2],
+    ['list','Ya no aparece el letrero de novedades la primera vez que instalas la app.',1]]],
   ['2026.11.26-6','26 de noviembre',[
     ['moon','En el Historial, «Se durmió» y «Se despertó» ahora son registros separados.',3],
     ['swap','Las flechas de cada registro de sueño lo cambian al instante entre «Se durmió» y «Se despertó».',3],
@@ -1852,6 +1868,7 @@ async function checkUpdate(){
     requestAnimationFrame(()=>{
       raf=false;
       const nav=document.querySelector('.nav');
+      document.documentElement.classList.toggle('scrolled',window.scrollY>40);
       if(window.scrollY>10&&!S.navHidden){ S.navHidden=true; if(nav) nav.classList.add('hide'); }
       document.documentElement.classList.add('scrolling');
       clearTimeout(t);
