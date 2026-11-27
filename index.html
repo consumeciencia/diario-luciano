@@ -628,6 +628,152 @@ html.noanim .top h1{-webkit-text-fill-color:currentColor;background:none}
 <div id="confirmroot"></div>
 <div id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg></div>
 <script>
+/* ===== Nube del diario (GitHub build): sincroniza con el Worker de Cloudflare y avisa por push ===== */
+(function(){
+  const API='https://diario-luciano.leandrovisualai.workers.dev', VAPID='BI6Y427PLIhiyougQgtprA_FpdgX8WqadOWvlj6JymQvS-wIWCx747L18UjOG_0phZpkyXx8jXFAoEMHmkUPwko';
+  const K={code:'diario-codigo',dev:'diario-dispositivo',name:'diario-quien',cache:'diario-nube-cache',rev:'diario-nube-rev'};
+  const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+  const rnd=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return btoa(String.fromCharCode(...a)).replace(/[+/=]/g,'').slice(0,n*2)};
+  let code=ls.get(K.code), dev=ls.get(K.dev), who=ls.get(K.name)||'';
+  if(!dev){ dev='d'+rnd(8); ls.set(K.dev,dev); }
+  const fromHash=()=>{ const m=location.hash.match(/f=([A-Za-z0-9_-]{16,64})/); return m?m[1]:null; };
+  let docs={}, rev=0, names={}, listeners=[], started=false, timer=null;
+  try{ const c=JSON.parse(ls.get(K.cache)||'null'); if(c&&c.code===code){ docs=c.docs||{}; rev=c.rev||0; names=c.names||{}; } }catch(e){}
+  const base=()=>API+'/f/'+code;
+  const save=()=>ls.set(K.cache,JSON.stringify({code,docs,rev,names}));
+  const coll=p=>p.split('/')[0];
+  const live=p=>docs[p]&&!docs[p]._del;
+  const strip=d=>{ const o=Object.assign({},d); delete o._r; delete o._del; return o; };
+  const snapOf=(c,q,changes,pending)=>{
+    let arr=Object.keys(docs).filter(p=>coll(p)===c&&live(p)).map(p=>({id:p.slice(c.length+1),d:strip(docs[p])}));
+    if(q.o){ const f=q.o[0],dir=q.o[1]==='desc'?-1:1; arr.sort((a,b)=>((a.d[f]>b.d[f])-(a.d[f]<b.d[f]))*dir); }
+    if(q.l) arr=arr.slice(0,q.l);
+    const mk=x=>({id:x.id,exists:true,data:()=>x.d,metadata:{hasPendingWrites:!!pending}});
+    return {docs:arr.map(mk),docChanges:()=>changes.filter(ch=>ch.c===c).map(ch=>({type:ch.type,doc:ch.type==='removed'?{id:ch.id,data:()=>({}),metadata:{hasPendingWrites:false}}:mk({id:ch.id,d:ch.d})})),
+      metadata:{fromCache:false,hasPendingWrites:!!pending}};
+  };
+  const docSnap=(p,pending)=>{ const ex=live(p); return {exists:ex,data:()=>ex?strip(docs[p]):undefined,metadata:{fromCache:false,hasPendingWrites:!!pending}}; };
+  const notify=(changes,pending)=>{ listeners.forEach(l=>{ try{
+    if(l.p){ if(!changes.length||changes.some(c=>c.p===l.p)||l.first){ l.first=false; l.cb(docSnap(l.p,pending)); } }
+    else if(l.first||changes.some(c=>c.c===l.c)){ l.first=false; l.cb(snapOf(l.c,l.q,changes,pending)); }
+  }catch(e){ console.error(e); } }); };
+  const apply=(p,d)=>{ if(d&&!d._del){ docs[p]=d; } else { docs[p]={_del:true,_r:(docs[p]&&docs[p]._r)||0}; } };
+  async function pull(){
+    if(!code) return;
+    try{
+      const r=await fetch(base()+'/state?since='+rev,{cache:'no-store'}); if(!r.ok) throw 0;
+      const j=await r.json(); const ch=[];
+      names=j.names||names;
+      Object.keys(j.changes||{}).forEach(p=>{
+        const d=j.changes[p], had=live(p);
+        if(d._del){ if(had){ ch.push({type:'removed',p,c:coll(p),id:p.slice(coll(p).length+1)}); } docs[p]={_del:true,_r:d._r}; }
+        else { docs[p]=d; ch.push({type:had?'modified':'added',p,c:coll(p),id:p.slice(coll(p).length+1),d:strip(d)}); }
+      });
+      if(j.rev<rev){ docs={}; rev=0; return pull(); }
+      rev=Math.max(rev,j.rev); save(); window.__nubeOk=true; notify(ch,false);
+      if(!ch.length) listeners.forEach(l=>{ if(l.first){ l.first=false; if(l.p) l.cb(docSnap(l.p,false)); else l.cb(snapOf(l.c,l.q,[],false)); } });
+    }catch(e){ listeners.forEach(l=>{ if(l.err&&!window.__nubeOk) l.err({code:'offline'}); }); }
+  }
+  /* escrituras agrupadas */
+  let queue=[], flushT=null;
+  function enqueue(p,d,msg){ return new Promise((res,rej)=>{ queue.push({p,d,msg,res,rej}); clearTimeout(flushT); flushT=setTimeout(flush,30); }); }
+  async function flush(){
+    const batch=queue; queue=[]; if(!batch.length) return;
+    const msg=batch.map(b=>b.msg).filter(Boolean).pop();
+    try{
+      const r=await fetch(base()+'/write',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,name:who,msg,ops:batch.map(b=>({p:b.p,d:b.d}))})});
+      if(!r.ok) throw new Error('http'); const j=await r.json();
+      // la revisión se adopta en el siguiente pull (trae lo propio y lo ajeno)
+      batch.forEach(b=>b.res()); pull();
+    }catch(e){ batch.forEach(b=>b.rej(e)); pull(); }
+  }
+  async function setDoc(p,obj,del){
+    const c=coll(p), had=live(p), prev=docs[p];
+    let msg=null;
+    if(!del&&!had&&c!=='meta'&&typeof obj.ts==='number'&&Math.abs(Date.now()-obj.ts)<10*60000&&window.nubeMsg){ try{ msg=window.nubeMsg(c,obj); }catch(e){} }
+    apply(p,del?null:Object.assign({},obj,{_r:(prev&&prev._r)||0}));
+    notify([{type:del?'removed':(had?'modified':'added'),p,c,id:p.slice(c.length+1),d:obj}],true);
+    try{ await enqueue(p,del?null:obj,msg); }
+    catch(e){ docs[p]=prev; if(!prev) delete docs[p]; notify([{type:had?'modified':'removed',p,c,id:p.slice(c.length+1),d:prev?strip(prev):{}}],false); throw e; }
+  }
+  function query(c,q){ q=q||{};
+    return {orderBy:(f,d)=>query(c,Object.assign({},q,{o:[f,d]})),limit:n=>query(c,Object.assign({},q,{l:n})),
+      get:async()=>{ await pull(); return snapOf(c,q,[],false); },
+      onSnapshot:(cb,err)=>{ listeners.push({c,q,cb,err,first:true}); if(started&&window.__nubeOk) setTimeout(()=>notify([],false),0); return ()=>{}; },
+      doc:id=>dref(c+'/'+id) }; }
+  function dref(p){
+    const prefs=/^data\//.test(p);
+    return {set:o=>prefs?Promise.resolve():setDoc(p,o,false),delete:()=>setDoc(p,null,true),
+      get:async()=>{ if(!prefs) await pull(); return prefs?{exists:false,data:()=>undefined}:docSnap(p,false); },
+      onSnapshot:(cb,err)=>{ if(!prefs) listeners.push({p,cb,err,first:true}); return ()=>{}; }}; }
+  const db={collection:c=>query(c),doc:p=>dref(p)};
+  const user={id:async()=>dev,can:()=>true,profiles:async ids=>{ const o={}; ids.forEach(i=>{ if(names[i]) o[i]={name:names[i]}; }); return o; }};
+  const startLoop=()=>{ if(started) return; started=true; pull();
+    clearInterval(timer); timer=setInterval(()=>{ if(!document.hidden) pull(); },7000);
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) pull(); });
+    window.addEventListener('focus',pull); window.addEventListener('online',pull); cfgToSW(); };
+  async function cfgToSW(){ try{ const c=await caches.open('diario-cfg'); await c.put('cfg',new Response(JSON.stringify({api:API,code,device:dev}))); }catch(e){} }
+
+  /* ---------- pantallas ---------- */
+  const css='#nb{position:fixed;inset:0;z-index:99999;background:rgba(10,15,40,.55);display:flex;align-items:flex-end;justify-content:center;font-family:system-ui,sans-serif}#nb .p{background:#fff;color:#14203f;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:22px 20px 26px;max-height:92vh;overflow:auto}#nb h2{margin:0 0 6px;font-size:21px}#nb p{margin:6px 0 12px;font-size:14.5px;line-height:1.45;color:#47527a}#nb input{width:100%;box-sizing:border-box;font-size:17px;padding:12px;border:1.5px solid #c9d0ee;border-radius:12px;margin:4px 0 10px}#nb button{width:100%;font-size:16.5px;font-weight:700;padding:13px;border-radius:13px;border:0;background:#2457D6;color:#fff;margin-top:8px}#nb button.g{background:#eef1fb;color:#2457D6}#nb .code{font-size:13px;word-break:break-all;background:#f1f3fb;border-radius:10px;padding:10px;margin:6px 0}#nb .err{color:#c0392b}';
+  function overlay(html){ let o=document.getElementById('nb'); if(!o){ const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st); o=document.createElement('div'); o.id='nb'; document.body.appendChild(o); } o.innerHTML='<div class="p">'+html+'</div>'; return o; }
+  const closeOv=()=>{ const o=document.getElementById('nb'); if(o) o.remove(); };
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const link=()=>location.origin+location.pathname+'#f='+code;
+  function setup(){ return new Promise(resolve=>{
+    const joining=fromHash();
+    const show=()=>{
+      const o=overlay(joining?'<h2>Unirte al diario de Luciano</h2><p>Te invitaron a ver y anotar en el mismo diario. Escribe cómo te van a ver los demás.</p><input id="nbn" placeholder="Tu nombre (ej. Papá)" value="'+esc(who)+'"><button id="nbj">Unirme</button>'
+        :'<h2>Diario compartido</h2><p>Crea el diario para compartirlo con tu pareja o cuidadores, o únete a uno que ya exista con el enlace que te mandaron.</p><input id="nbn" placeholder="Tu nombre (ej. Mamá)" value="'+esc(who)+'"><button id="nbc">Crear diario nuevo</button><p style="margin-top:14px">¿Ya existe? Pega aquí el enlace o el código:</p><input id="nbl" placeholder="Enlace o código"><button class="g" id="nbj">Unirme con el enlace</button><p class="err" id="nbe"></p>');
+      const name=()=>{ const v=o.querySelector('#nbn').value.trim(); if(!v){ o.querySelector('#nbn').focus(); return null; } who=v; ls.set(K.name,v); return v; };
+      const done=(c,upload)=>{ code=c; ls.set(K.code,c); docs={}; rev=0; location.hash=''; closeOv();
+        fetch(base()+'/sub',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,name:who})}).catch(()=>{});
+        resolve(upload); };
+      const cb=o.querySelector('#nbc'); if(cb) cb.onclick=()=>{ if(!name()) return; done('f'+rnd(14),true); };
+      o.querySelector('#nbj').onclick=()=>{ if(!name()) return; let c=joining; if(!c){ const t=(o.querySelector('#nbl').value||'').trim(); const m=t.match(/([A-Za-z0-9_-]{16,64})\s*$/); c=m&&m[1]; }
+        if(!c){ const e=o.querySelector('#nbe'); if(e) e.textContent='Pega el enlace completo que te mandaron.'; return; } done(c,false); };
+    }; show(); }); }
+  async function uploadLocal(){
+    try{ const j=JSON.parse(ls.get('diario-bebe-v1')||'null')||{events:[],growth:[]};
+      const ops=[]; (j.events||[]).forEach(e=>{ const {id,...d}=e; ops.push({p:'events/'+id,d}); }); (j.growth||[]).forEach(g=>{ const {id,...d}=g; ops.push({p:'growth/'+id,d}); }); ops.push({p:'meta/profile',d:Object.assign({name:'Luciano',birth:'2026-09-19',sex:'nino'},j.profile&&j.profile.name?j.profile:{})});
+      for(let i=0;i<ops.length;i+=200) await fetch(base()+'/write',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,name:who,ops:ops.slice(i,i+200)})});
+    }catch(e){}
+  }
+  async function ready(){
+    const h=fromHash(); if(h&&h!==code){ code=null; }
+    if(!code){ const up=await setup(); if(up) await uploadLocal(); }
+    startLoop();
+  }
+  /* ---------- menú: compartir y avisos ---------- */
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent), standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  const u8=s=>{ const p='='.repeat((4-s.length%4)%4), b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from([...b].map(c=>c.charCodeAt(0))); };
+  async function pushState(){ try{ if(!('serviceWorker' in navigator)||!('PushManager' in window)) return 'no'; const r=await Promise.race([navigator.serviceWorker.ready,new Promise((_,j)=>setTimeout(j,2500))]); const s=await r.pushManager.getSubscription(); return s&&Notification.permission==='granted'?'on':'off'; }catch(e){ return 'no'; } }
+  async function enablePush(){
+    const perm=await Notification.requestPermission(); if(perm!=='granted') throw new Error('Permiso denegado. Puedes activarlo en los ajustes del celular.');
+    const r=await navigator.serviceWorker.ready; let s=await r.pushManager.getSubscription();
+    if(!s) s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(VAPID)});
+    await cfgToSW();
+    const res=await fetch(base()+'/sub',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,name:who,sub:s.toJSON()})}); if(!res.ok) throw new Error('No se pudo guardar el aviso en la nube.');
+  }
+  async function disablePush(){ try{ const r=await navigator.serviceWorker.ready; const s=await r.pushManager.getSubscription(); if(s) await s.unsubscribe(); }catch(e){} await fetch(base()+'/sub',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({device:dev,unsub:true})}).catch(()=>{}); }
+  async function menu(){
+    const st=await pushState();
+    const need=isIOS&&!standalone;
+    const o=overlay('<h2>Compartir y avisos</h2><p>Estás como <b>'+esc(who||'—')+'</b>. Para que otra persona vea y anote lo mismo, mándale este enlace y que lo abra en su celular:</p><div class="code">'+esc(link())+'</div><button id="nbs">Compartir enlace</button><button class="g" id="nbcp">Copiar enlace</button>'
+      +'<h2 style="margin-top:20px">Avisos en este celular</h2>'+(need?'<p>En iPhone primero instala la app: toca Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono y vuelve aquí.</p>':(st==='no'?'<p>Este navegador no permite avisos.</p>':'<p>Recibe un aviso cuando otra persona registre algo (por ejemplo «Mamá registró: Se durmió»).</p><button id="nbp">'+(st==='on'?'Desactivar avisos':'Activar avisos')+'</button>'))
+      +'<p class="err" id="nbe"></p><button class="g" id="nbx">Cerrar</button>');
+    o.querySelector('#nbx').onclick=closeOv; const e=o.querySelector('#nbe');
+    o.querySelector('#nbcp').onclick=async()=>{ try{ await navigator.clipboard.writeText(link()); e.style.color='#2a7a3b'; e.textContent='Enlace copiado.'; }catch(x){ e.textContent='No se pudo copiar; mantén pulsado el enlace para copiarlo.'; } };
+    o.querySelector('#nbs').onclick=async()=>{ try{ if(navigator.share) await navigator.share({title:'Diario de Luciano',text:'Entra al diario de Luciano:',url:link()}); else { await navigator.clipboard.writeText(link()); e.style.color='#2a7a3b'; e.textContent='Enlace copiado.'; } }catch(x){} };
+    const pb=o.querySelector('#nbp'); if(pb) pb.onclick=async()=>{ pb.disabled=true; try{ if(st==='on') await disablePush(); else await enablePush(); menu(); }catch(x){ e.textContent=x.message||'No se pudo.'; pb.disabled=false; } };
+  }
+  document.addEventListener('click',ev=>{ const t=ev.target.closest&&ev.target.closest('[data-act="cloud"]'); if(t){ ev.stopPropagation(); menu(); } },true);
+  window.nubeNames=()=>names;
+  window.nubeWho=()=>who;
+  window.nubeBtn=()=>'<button class="ghost" type="button" data-act="cloud">Compartir con otro celular y avisos</button>';
+  window.claude={use:async n=>{ if(n==='db'){ await ready(); return db; } if(n==='user') return user; throw new Error('no'); },nube:true};
+})();
+
 (function(){
 'use strict';
 const MONTH = 30.4375*864e5;
@@ -820,7 +966,7 @@ async function init(){
       snap.docChanges().forEach(c=>{
         if(c.type==='removed') return;
         const d=snapData(c.doc); if(!d.who||d.who===S.me||c.doc.metadata.hasPendingWrites) return;
-        const f=evInfo(d); toast((S.names[d.who]||'Otro cuidador')+' registró: '+f.t+(f.s?' · '+f.s:''));
+        const f=evInfo(d); toast((S.names[d.who]||(window.nubeNames&&window.nubeNames()[d.who])||'Otro cuidador')+' registró: '+f.t+(f.s?' · '+f.s:''));
       });
     }
     render();
@@ -1044,7 +1190,7 @@ function profileSheet(){
     {t:'text',id:'name',l:'Nombre',v:p.name||'',ph:'Nombre del bebé'},
     {t:'date',id:'birth',l:'Fecha de nacimiento',v:p.birth||''},
     {t:'seg',id:'sex',l:'Para comparar con las curvas de la OMS',v:p.sex||'',o:[['nino','Niño'],['nina','Niña'],['','Sin comparar']]}],
-    extra:'<button class="ghost" type="button" data-act="news">Novedades de la app (versión '+APP_VERSION+')</button><button class="danger" type="button" data-act="reset">Borrar datos…</button>',
+    extra:(window.nubeBtn?window.nubeBtn():'')+'<button class="ghost" type="button" data-act="news">Novedades de la app (versión '+APP_VERSION+')</button><button class="danger" type="button" data-act="reset">Borrar datos…</button>',
     onSave:async()=>{ const prev=JSON.parse(JSON.stringify(S.profile||{})); await saveProfile({name:val('name'),birth:val('birth'),sex:val('sex')}); toast('Datos del bebé guardados',()=>saveProfile(prev)); return true; }});
 }
 
@@ -1316,19 +1462,20 @@ function dayConclusions(ds){
   const r=dayStats(ds), isToday=ds===startOfDay(Date.now()), aNow=ageAt(ds+DAY/2), out=[];
   const prev=[]; for(let i=1;i<=7;i++){ const d=ds-i*DAY; if(hasRec(d)) prev.push(dayStats(d)); }
   const avg=k=>prev.length?mean(prev.map(x=>x[k])):null;
+  const nrec=S.events.filter(e=>e.ts>=ds&&e.ts<ds+DAY).length, enough=nrec>=MIN_DAY_REC;
   // 1. Resumen del día
   const parts=[];
   if(r.sleepMs>0) parts.push('durmió '+fmtH(r.sleepMs));
   if(r.feeds) parts.push(r.feeds+(r.feeds===1?' toma':' tomas')+(r.ml?' ('+r.ml+' ml de biberón)':''));
   if(r.diapers) parts.push(r.diapers+(r.diapers===1?' pañal':' pañales'));
-  if(parts.length){ const t=parts.join(' · '); out.push({l:'info',t:(isToday?'Hasta ahora: ':'')+t.charAt(0).toUpperCase()+t.slice(1)}); }
+  if(enough&&parts.length){ const t=parts.join(' · '); out.push({l:'info',t:(isToday?'Hasta ahora: ':'')+t.charAt(0).toUpperCase()+t.slice(1)}); }
   // 2. Alertas
   if(r.fev!=null&&r.fev>=38) out.push({l:'warn',t:'Tuvo fiebre: máxima de '+nf(r.fev)+' °C.'+(aNow!=null&&aNow<3?' En menores de 3 meses hay que consultar al médico.':'')});
-  if(!isToday&&r.diapers&&aNow!=null&&aNow>=0.25&&r.pipi<6) out.push({l:'warn',t:'Solo '+r.pipi+(r.pipi===1?' pañal mojado':' pañales mojados')+' (lo habitual son 6 o más). Revisa si faltó anotar alguno.'});
+  if(enough&&!isToday&&r.diapers&&aNow!=null&&aNow>=0.25&&r.pipi<6) out.push({l:'warn',t:'Solo '+r.pipi+(r.pipi===1?' pañal mojado':' pañales mojados')+' (lo habitual son 6 o más). Revisa si faltó anotar alguno.'});
   const de=ds+DAY, gaps=Object.values(sleepInfo().gaps).filter(g=>g.b.ts>=ds&&g.b.ts<de);
-  if(gaps.length) out.push({l:'warn',t:gaps.length===1?'Hay un sueño incompleto: toca el + para completarlo.':'Hay '+gaps.length+' sueños incompletos: toca los + para completarlos.'});
+  if(enough&&gaps.length) out.push({l:'warn',t:gaps.length===1?'Hay un sueño incompleto: toca el + para completarlo.':'Hay '+gaps.length+' sueños incompletos: toca los + para completarlos.'});
   // 3. Comparación con su promedio de la semana anterior
-  if(!isToday&&prev.length>=2){
+  if(enough&&!isToday&&prev.length>=MIN_DAYS){
     const as=avg('sleepMs'), af=avg('feeds'), ad=avg('diapers');
     if(r.sleepMs>0&&as>0){ const dm=(r.sleepMs-as)/60000; if(Math.abs(dm)>=45) out.push({l:dm>0?'ok':'info',t:'Durmió '+fmtDur(Math.abs(dm)*60000)+(dm>0?' más':' menos')+' que su promedio de los días anteriores ('+fmtH(as)+').'}); }
     if(r.feeds&&af>0){ const df=r.feeds-af; if(Math.abs(df)>=2) out.push({l:'info',t:'Comió '+Math.round(Math.abs(df))+(Math.round(Math.abs(df))===1?' vez':' veces')+(df>0?' más':' menos')+' que de costumbre (promedio '+nf(af)+').'}); }
@@ -1336,7 +1483,7 @@ function dayConclusions(ds){
   }
   // 4. Sueño más largo del día
   const ps=sleepInfo().periods.filter(p=>p.end&&p.ts>=ds&&p.ts<de);
-  if(ps.length){ const lg=ps.reduce((a,b)=>(b.end-b.ts)>(a.end-a.ts)?b:a); if(lg.end-lg.ts>=2*36e5) out.push({l:'ok',t:'Su sueño más largo: '+fmtDur(lg.end-lg.ts)+' seguidas, desde las '+hm(lg.ts)+'.'}); }
+  if(enough&&ps.length){ const lg=ps.reduce((a,b)=>(b.end-b.ts)>(a.end-a.ts)?b:a); if(lg.end-lg.ts>=2*36e5) out.push({l:'ok',t:'Su sueño más largo: '+fmtDur(lg.end-lg.ts)+' seguidas, desde las '+hm(lg.ts)+'.'}); }
   // 5. Salud y alimentos
   const evs=S.events.filter(e=>e.ts>=ds&&e.ts<de);
   const vac=evs.filter(e=>e.type==='vaccine').map(e=>e.name).filter(Boolean);
@@ -1522,6 +1669,8 @@ function growthInsights(m){
 }
 
 /* ---------- análisis de actividad ---------- */
+const MIN_DAYS=3, MIN_DAY_REC=3;
+function dataDays(){ const t0=startOfDay(Date.now()); let n=0; for(let i=0;i<=14;i++) if(hasRec(t0-i*DAY)) n++; return n; }
 function hasRec(ds){ const de=ds+DAY, now=Date.now();
   return S.events.some(e=>e.ts>=ds&&e.ts<de)||sleepInfo().periods.some(p=>p.ts<de&&(p.end||now)>ds); }
 const median=a=>{ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y), k=s.length>>1; return s.length%2?s[k]:(s[k-1]+s[k])/2; };
@@ -1544,6 +1693,7 @@ function analyze(){
   if(!cur.length&&hasRec(t0)){ cur=[t0]; partial=true; }
   const R={sleep:[],feed:[],diaper:[],health:[],days:cur.length,partial};
   if(!cur.length) return R;
+  if(dataDays()<MIN_DAYS){ R.short=true; return R; }
   const from=Math.min(...cur), to=Math.max(...cur)+DAY;
   const ds=cur.map(dayStats), ps=prev.map(dayStats);
   const inR=e=>e.ts>=from&&e.ts<to;
@@ -1635,6 +1785,7 @@ function homeInsights(){
   const out=[], now=Date.now(), aNow=ageAt(now);
   const fev=S.events.find(e=>e.type==='fever'&&e.temp>=38&&e.ts>=now-48*36e5);
   if(fev) out.push({l:'warn',t:'Fiebre de '+nf(fev.temp)+' °C '+dayLabel(fev.ts).toLowerCase()+' a las '+hm(fev.ts),d:aNow!=null&&aNow<3?'En menores de 3 meses, 38 °C o más es motivo para consultar al médico de inmediato.':'Vigila cómo sigue y consulta si te preocupa.'});
+  if(dataDays()<MIN_DAYS){ if(!out.length) out.push({l:'info',t:'Aún faltan datos para sacar conclusiones',d:'Se necesitan registros de al menos '+MIN_DAYS+' días (llevas '+dataDays()+'). Mientras tanto no se muestran avisos ni promedios.'}); return out; }
   const os=openSleep();
   if(!os){
     const lastEnd=lastWakeObj(), ww=wakeWindow(aNow);
@@ -1662,6 +1813,7 @@ function aiPayload(){
 }
 async function runAI(){
   if(S.ai.busy) return;
+  if(dataDays()<MIN_DAYS){ S.ai={busy:false,text:'',err:'Aún no hay datos suficientes para analizar: se necesitan registros de al menos '+MIN_DAYS+' días.'}; render(); return; }
   let sample=null; try{ sample=await claude.use('sample'); }catch(e){}
   if(!sample){ S.ai={busy:false,text:'',err:'El análisis con Claude no está disponible en esta vista.'}; render(); return; }
   S.ai={busy:true,text:'',err:''}; render();
@@ -1700,7 +1852,8 @@ function viewRes(){
   return '<h2 class="dayh" style="margin-top:4px">Análisis</h2>'
   +'<div class="card aicard"><h3>Análisis detallado con Claude</h3>'+aiBody+(S.ai.err?'<p class="note" style="color:var(--health)">'+esc(S.ai.err)+'</p>':'')
   +'<button class="primary mt" data-act="ai"'+(S.ai.busy?' disabled':'')+'>'+(S.ai.busy?'Analizando…':(S.ai.text?'Volver a analizar':'Analizar ahora'))+'</button></div>'
-  +(A.days?'<p class="note">Promedios '+(A.partial?'con lo registrado hoy (día incompleto).':'de los últimos '+A.days+(A.days===1?' día':' días')+' con registros, sin contar hoy.')+'</p>':'<div class="empty mt">Cuando haya registros, aquí aparecerá el análisis de sueño, comida, pañales y salud.</div>')
+  +(A.short?'<div class="empty mt">Aún no hay datos suficientes para sacar conclusiones. Se necesitan registros de al menos '+MIN_DAYS+' días; llevas '+dataDays()+'. Sigue anotando y aquí aparecerán los análisis.</div>':'')
+  +(A.days&&!A.short?'<p class="note">Promedios '+(A.partial?'con lo registrado hoy (día incompleto).':'de los últimos '+A.days+(A.days===1?' día':' días')+' con registros, sin contar hoy.')+'</p>':'<div class="empty mt">Cuando haya registros, aquí aparecerá el análisis de sueño, comida, pañales y salud.</div>')
   +grp('Sueño',A.sleep)+grp('Alimentación',A.feed)+grp('Pañales',A.diaper)+grp('Salud',A.health)
   +'<div class="sec">Por día</div>'
   +'<div class="daynav"><button class="iconbtn" data-act="prevday" aria-label="Día anterior">'+ic('left')+'</button><strong>'+esc(dayLabel(ds))+'</strong><button class="iconbtn" data-act="nextday" aria-label="Día siguiente"'+(isToday?' disabled style="opacity:.35"':'')+'>'+ic('right')+'</button></div>'
@@ -1958,9 +2111,12 @@ document.addEventListener('visibilitychange',()=>{ try{
 }catch(e){} });
 
 /* ---------- versión, novedades y actualización ---------- */
-const APP_VERSION='2026.11.27-1';
+const APP_VERSION='2026.11.27-2';
 // Cada cambio: [ícono, texto, importancia] · 3 = Importante, 2 = Mejora, 1 = Detalle
 const CHANGELOG=[
+  ['2026.11.27-2','27 de noviembre',[
+    ['heart','Nuevo: diario compartido. En Ajustes > «Compartir con otro celular y avisos» mandas un enlace y los dos ven y anotan lo mismo, con avisos en el celular cuando el otro registra algo.',3],
+    ['bars','Si todavía hay pocos datos (menos de 3 días con registros), la app ya no saca conclusiones: ni en Hoy, ni en Análisis, ni en el Historial.',3]]],
   ['2026.11.27-1','27 de noviembre',[
     ['undo','Nuevo botón Rehacer, junto a Deshacer: vuelve a poner lo que acabas de deshacer.',3],
     ['list','El menú de abajo ya no se esconde al hacer scroll.',2],
@@ -2098,7 +2254,8 @@ async function refreshAll(){
 })();
 
 checkNews();
-if(typeof claude==='undefined') document.documentElement.classList.add('noclaude');
+document.documentElement.classList.add('noclaude');
+window.nubeMsg=function(c,d){ const w=(window.nubeWho&&window.nubeWho())||'Alguien'; if(c==='growth') return w+' anotó una medida'; const f=evInfo(d); return w+' registró: '+f.t+(f.s?' · '+f.s:''); };
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 init();
 })();
